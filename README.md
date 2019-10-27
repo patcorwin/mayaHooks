@@ -44,7 +44,7 @@ def cubeFriend(objName):
 mayaHooks.dagMenuProc.registerMenu(cubeFriend)
 ```
 
-This will make it so right cliking anything with `cube` in the name will add
+This will make it so right clicking anything with `cube` in the name will add
 one menuItem, otherwise different menuItems are added.
 
 ### To distribute code

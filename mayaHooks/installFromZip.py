@@ -33,18 +33,22 @@ Todo:
 from __future__ import absolute_import, division, print_function
 
 import datetime
-import json
 import logging
 import os
+import tempfile
 import zipfile
 
 from maya import cmds
 
 
+from . import installCore
+from mayaHooksCore import uninstall
+
+
 exampleSetupCode = '''
 try:
     import sys
-    sys.path.append('{}')
+    sys.path.append('{installDir}')
     import mayaHooks.dagMenuProc
     mayaHooks.dagMenuProc.overrideDagMenuProc()
     
@@ -54,7 +58,7 @@ try:
 except:
     import traceback
     print( traceback.format_exc() )
-    print( "See above error text, something went wrong in mayaHook\'s userSetup.py" )
+    print( "See above error text, something went wrong in mayaHook's userSetup.py" )
 '''
 
 
@@ -62,83 +66,74 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def run(zipPath):
-    log.debug('Beginning install...')
-    path, filename = os.path.split(zipPath)
-    
-    settingsFile = os.path.expanduser("~") + '/MayaHookSettings/' + filename + '.settings'
-    
-    installDir = None
-    
-    if os.path.exists(settingsFile):
-        log.debug('Settings Exist: ' + settingsFile)
-        
-        # &&& Need to account for corrupted settings
-        with open(settingsFile, 'r') as fid:
-            existingSettings = json.load(fid)
-        
-        # ??? check version, confirm upgrade or downgrade
-        
-        installDir = existingSettings.get('location', None)
-        if installDir:
-            res = cmds.confirmDialog(m='Upgrade installation at "{}"}'.format(installDir), b=['Yes', 'No'])
-            if res == 'No':
-                installDir = None
-    
-    if not installDir:
-        folders = cmds.fileDialog2(fileMode=3, cap='Where do you want to install the tools?')
-        if not folders:
-            cmds.warning('Installation aborted')
-        else:
-            installDir = folders[0]
-        
-    log.debug( 'Extracting "{}" into "{}"'.format(zipPath, installDir) )
-    with zipfile.ZipFile(zipPath, 'r') as fid:
-        fid.extractall(installDir)
-        fid.close()
-    
-    setupCodeFile = installDir + '/__userSetup__.py'
-    setupCode = ''
-    if os.path.exists(setupCodeFile):
-        with open(setupCodeFile, 'r') as fid:
-            setupCode = fid.read()
-    
-    
-    # &&& Might want to verify the correct version has been imported
-    import mayaHooks.userSetup_setup
-    
-    if setupCode:
-        mayaHooks.userSetup_setup.ManageUserSetup( setupCode.format(installDir), filename )
-    
-    versionFile = installDir + '/info.json'
-    version = -1
-    if os.path.isfile(versionFile):
-        with open(versionFile) as fid:
-            info = json.load(fid)
-        
-        version = info.get('version', -1)
-    
-    settings = {
-        'version':      version,
-        'install_date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M.%S.%f'),
-        'location':     installDir,
-    }
-    
-    path, filename = os.path.split(settingsFile)
-    if not os.path.exists(path):
-        os.makedirs(path)
-    
-    with open( settingsFile, 'w' ) as fid:
-        json.dump(settings, fid, indent=4)
+try:
+    basestring  # noqa
+except Exception:
+    basestring = str
 
+
+def run(zippath):
+    
+    mayaVersion = installCore.ask(zippath)
+    
+    if not mayaVersion:
+        return
+    
+    packageKey = installZip(zippath, mayaVersion)
+    
+    settings = installCore.loadSettings()
+
+    installCore.update(settings, packageKey, mayaVersion,
+        source=os.path.normpath(zippath).replace('\\', '/'),
+        source_data={'modified_time': os.path.getmtime(zippath)},
+    )
+    cmds.confirmDialog(m='Install complete!')
+
+
+
+def installZip(zipdata, mayaVersion):
+    '''
+    `zipData` is either a path to a zip file, or a file like objects, just like `ZipFile()`.
+    
+    Overwrites any existing install.  Use `run()` to prompt the user.
     '''
     
-    make <name>.upacked.settings in os.path.expanduser("~")
+    info, packagekey, userSetupCode, packageContainerFolder = installCore.extractZipBasicInfo(zipdata)
+
+    uninstall(packagekey, mayaVersion)
+
+    settings = installCore.loadSettings()
     
-    {
-        'version': #, build this from p4
-        'date':  yyyy.mm.dd.hr.min.sec
-        'location': ''
-    }
+    log.debug('PACKAGE KEY {}'.format(packagekey))
     
-    '''
+    newBuildTime = info.get('utc_build_time', installCore.UTC_BUILD_DEFAULT)
+
+    scriptFolder = installCore.defaultScriptsPath(mayaVersion=mayaVersion)
+    
+    # Finally, extract to the `mayaVersion`
+    if isinstance(zipdata, basestring):
+        tempZipPath = zipdata
+    else:
+        tempZipPath = tempfile.mktemp(suffix='.zip')
+        zipdata.seek(0) # Assumed to have a BytesIO object
+        with open(tempZipPath, 'wb') as fid:
+            fid.write(zipdata.read())
+    
+    installCore.unzip(tempZipPath, scriptFolder, packagekey, subdir=packageContainerFolder)
+    
+    # Edit usersetup.py as needed.
+    if userSetupCode:
+        log.debug('Editing userSetup.py')
+        installCore.userSetupEdit(mayaVersion, packagekey, userSetupCode)
+    else:
+        log.debug('No userSetup_code.py exists top level, no edits to userSetup.py.')
+
+    # write settings of mayaVersion, version etc
+    #log.debug('Updating registry: {} {} {}'.format(  ))
+    installCore.update(settings, packagekey, mayaVersion,
+        utc_install_time=str(datetime.datetime.utcnow()),
+        utc_build_time=newBuildTime,
+    )
+    
+    return packagekey
+
