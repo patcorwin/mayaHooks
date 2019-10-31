@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from functools import partial
 
 from maya.cmds import about, button, columnLayout, confirmDialog, deleteUI, fileDialog2, \
-    shelfButton, shelfLayout, showWindow, text, textField, textFieldButtonGrp, window
+    setParent, shelfButton, shelfLayout, showWindow, tabLayout, text, textField, textFieldButtonGrp, window
 
 import mayaHooksCore
 
@@ -43,12 +43,20 @@ class Gui(object):
                 button(l='Uninstall ' + name, c=partial(self.uninstall, name, ver) )
                 
                 if data.get( 'shelf_items' ):
-                    shelfLayout(name + ' shelf')
+                    tabLayout()
+                    shelfLayout(name + '_shelf', h=100)
                     
                     for item in data['shelf_items']:
-                        if 'image' in item:
+                        if item.get('image', ''):
                             del item['image']
+                            #item['imageOverlayLabel'] = item.get('annotation', '')
+                            #item['image'] = 'pythonFamily.png'
+                            #item['style'] = 'iconOnly'
+                            
+                        item = {str(k): str(v) for k, v in item.items()}  # Commands can't take unicode (in python 2.7)
                         shelfButton( **item )
+                    setParent('..')
+                    setParent('..')
         
         showWindow()
     
@@ -63,11 +71,11 @@ class Gui(object):
         
     def urlInstall(self, arg):
         data = textField(self.urlField, q=True, tx=True)
-        installFromUrl.run(data, True)
+        installFromUrl.run(data)
     
     def zipInstall(self, arg):
         data = textFieldButtonGrp(self.zipField, q=True, tx=True)
-        installFromZip.run(data, True)
+        installFromZip.run(data)
     
     def fileBrowse(self):
         files = fileDialog2(ff='*.zip', fm=1 )

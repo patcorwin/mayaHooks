@@ -143,7 +143,7 @@ def makeMelInstaller():
         */
         ''')
     
-    with open( os.path.dirname(__file__) + '/mayaHooksInstaller.mel', 'w' ) as fid:
+    with open( os.path.dirname(__file__) + '/../mayaHooksInstaller.mel', 'w' ) as fid:
         fid.write( header + allCode )
     
         
