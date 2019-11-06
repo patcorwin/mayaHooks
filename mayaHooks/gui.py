@@ -35,12 +35,15 @@ class Gui(object):
         
         button(l='Check for Updates', c=self.checkForUpdates, en=False )
         
+        text(l='Drag the shelf icons onto your own shelf.  They will regenerate when you reopent his gui.')
+        
         settings = installCore.loadSettings()
         
         for ver in ['common', str(about(v=True))]:
             text(l=ver)
             for name, data in settings.get(ver, {}).items():
-                button(l='Uninstall ' + name, c=partial(self.uninstall, name, ver) )
+                if name not in ('mayaHooks', 'mayaHooksCore'):
+                    button(l='Uninstall ' + name, c=partial(self.uninstall, name, ver) )
                 
                 if data.get( 'shelf_items' ):
                     tabLayout()
