@@ -371,12 +371,12 @@ def remPackage(packageName):\n\
     # Remove reference to the given `packageName`\n\
     import sys\n\
     dotName = packageName + '.'\n\
-    for name in sys.path:\n\
+    for name in list(sys.modules.keys()):\n\
         if name.startswith(dotName):\n\
-            del sys.path[name]\n\
+            del sys.modules[name]\n\
 \n\
-    if packageName in sys.path:\n\
-        del sys.path[packageName]\n\
+    if packageName in sys.modules:\n\
+        del sys.modules[packageName]\n\
 \n\
 remPackage('mayaHooks')\n\
 remPackage('mayaHooksCore')\n\
