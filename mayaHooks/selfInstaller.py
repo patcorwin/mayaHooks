@@ -129,12 +129,12 @@ def makeMelInstaller():
         # Remove reference to the given `packageName`
         import sys
         dotName = packageName + '.'
-        for name in sys.path:
+        for name in list(sys.modules.keys()):
             if name.startswith(dotName):
-                del sys.path[name]
+                del sys.modules[name]
         
-        if packageName in sys.path:
-            del sys.path[packageName]
+        if packageName in sys.modules:
+            del sys.modules[packageName]
     
     remPackage('mayaHooks')
     remPackage('mayaHooksCore')
