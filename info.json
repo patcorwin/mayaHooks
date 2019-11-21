@@ -1,8 +1,8 @@
 {
-    "utc_build_time": "2019-11-06 06:55:28.248041",
+    "utc_build_time": "2019-11-21 02:26:13.001010",
     "shelf_items": [
         {
-            "command": "import mayaHooks\nmayaHooks.main()",
+            "command": "import mayaHooks;mayaHooks.main()",
             "image": "",
             "annotation": "mhg"
         }

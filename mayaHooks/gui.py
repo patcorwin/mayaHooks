@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from functools import partial
 
-from maya.cmds import about, button, columnLayout, confirmDialog, deleteUI, fileDialog2, \
+from maya.cmds import about, button, columnLayout, confirmDialog, deleteUI, evalDeferred, fileDialog2, \
     setParent, shelfButton, shelfLayout, showWindow, tabLayout, text, textField, textFieldButtonGrp, window
 
 import mayaHooksCore
@@ -50,11 +50,16 @@ class Gui(object):
                     shelfLayout(name + '_shelf', h=100)
                     
                     for item in data['shelf_items']:
+
+                        if 'imageOverlayLabel' not in item:
+                            item['imageOverlayLabel'] = item.get('annotation', '')
+
                         if item.get('image', ''):
-                            del item['image']
-                            #item['imageOverlayLabel'] = item.get('annotation', '')
-                            #item['image'] = 'pythonFamily.png'
-                            #item['style'] = 'iconOnly'
+                            #del item['image']
+                            
+                            item['image'] = 'pythonFamily.png'
+
+                        #item['style'] = 'iconOnly'
                             
                         item = {str(k): str(v) for k, v in item.items()}  # Commands can't take unicode (in python 2.7)
                         shelfButton( **item )
@@ -75,16 +80,17 @@ class Gui(object):
     def urlInstall(self, arg):
         data = textField(self.urlField, q=True, tx=True)
         installFromUrl.run(data)
+        evalDeferred('mayaHooks.main()')
     
     def zipInstall(self, arg):
         data = textFieldButtonGrp(self.zipField, q=True, tx=True)
         installFromZip.run(data)
+        evalDeferred('mayaHooks.main()')
     
     def fileBrowse(self):
         files = fileDialog2(ff='*.zip', fm=1 )
         if files:
-            textField(self.zipField, e=True, tx=files[0])
+            textFieldButtonGrp(self.zipField, e=True, tx=files[0])
     
     def checkForUpdates(self, arg):
         checkForUpdates.checkAll()
-    

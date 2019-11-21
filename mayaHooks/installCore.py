@@ -161,7 +161,8 @@ def unzip(zipPath, dest, rootname, subdir=''):
                 toDelete = newDest + '.delete'
                 os.rename(newDest, toDelete)
                 deleteQueue.append(toDelete)
-            os.rename(path, newDest)
+            #os.rename(path, newDest)
+            shutil.copytree(path, newDest)
         else:
             if not os.path.exists(infoFolder):
                 os.makedirs(infoFolder)

@@ -105,8 +105,6 @@ def installZip(zipdata, mayaVersion):
     settings = installCore.loadSettings()
     
     log.debug('PACKAGE KEY {}'.format(packagekey))
-    
-    newBuildTime = info.get('utc_build_time', installCore.UTC_BUILD_DEFAULT)
 
     scriptFolder = installCore.defaultScriptsPath(mayaVersion=mayaVersion)
     
@@ -115,7 +113,7 @@ def installZip(zipdata, mayaVersion):
         tempZipPath = zipdata
     else:
         tempZipPath = tempfile.mktemp(suffix='.zip')
-        zipdata.seek(0) # Assumed to have a BytesIO object
+        zipdata.seek(0)  # Assumed to have a BytesIO object
         with open(tempZipPath, 'wb') as fid:
             fid.write(zipdata.read())
     
@@ -130,10 +128,10 @@ def installZip(zipdata, mayaVersion):
 
     # write settings of mayaVersion, version etc
     #log.debug('Updating registry: {} {} {}'.format(  ))
-    installCore.update(settings, packagekey, mayaVersion,
-        utc_install_time=str(datetime.datetime.utcnow()),
-        utc_build_time=newBuildTime,
-    )
+
+    # Add the install time and update the registry with the info
+    info['utc_install_time'] = str(datetime.datetime.utcnow())
+
+    installCore.update(settings, packagekey, mayaVersion, **info)
     
     return packagekey
-

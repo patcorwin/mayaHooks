@@ -8,6 +8,7 @@ import zlib
 
 from . import installCore
 
+
 def makeMelInstaller():
     
     buildTime = getBuildTime(useDevPath=True)
@@ -145,6 +146,13 @@ def makeMelInstaller():
     mayaHooks.installCore.update(settings, 'mayaHooks', 'common',
         utc_install_time=str(datetime.datetime.utcnow()),
         utc_build_time=mayaHooks.selfInstaller.getBuildTime(),
+        shelf_items=[
+            {
+                'command': 'import mayaHooks;mayaHooks.main()',
+                'image': '',
+                'annotation': 'mhg'
+            }
+        ]
     )
     
     import mayaHooksCore
@@ -155,7 +163,7 @@ def makeMelInstaller():
     
     cmds.confirmDialog(m='mayaHooks successfully installed!')
     
-    
+    import inspect
     class FullReload(object):
 
         @staticmethod
