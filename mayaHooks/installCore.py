@@ -330,15 +330,9 @@ def ask(zipdata):
     
     # Otherwise ask where to install
     else:
-        ALL_VERSION = 'Common'
-        HERE = str(cmds.about(q=True, v=True))
-        
-        msg = 'Where do you want to install?\n\n' \
-              '"' + ALL_VERSION + '" will install to the scripts folder for all Maya versions.\n\n' \
-              '"' + HERE + '" will install to this version of Maya.\n\n'
         #'(Advanced) "Custom" lets you choose anywhere by editing userSetup.\n'
         
-        action = cmds.confirmDialog(m=msg, button=[ALL_VERSION, HERE, 'Cancel'])
+        action = cmds.confirmDialog(m=VERSION_MSG, button=[ALL_VERSION, HERE, 'Cancel'])
         
         if action == ALL_VERSION:
             mayaVersion = 'common'
@@ -348,3 +342,11 @@ def ask(zipdata):
             return False
     
     return mayaVersion
+
+
+ALL_VERSION = 'Common'
+HERE = str(cmds.about(q=True, v=True))
+
+VERSION_MSG = 'Where do you want to install?\n\n' \
+    '"' + ALL_VERSION + '" will install to the scripts folder for all Maya versions.\n\n' \
+    '"' + HERE + '" will install to this version of Maya.\n\n'
