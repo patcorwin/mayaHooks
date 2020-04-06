@@ -74,6 +74,12 @@ except Exception:
 
 def run(zippath):
     
+    # Strip out quotes if they exist
+    if zippath.startswith('"'):
+        zippath = zippath[1:]
+    if zippath.endswith('"'):
+        zippath = zippath[:-1]
+    
     mayaVersion = installCore.ask(zippath)
     
     if not mayaVersion:
