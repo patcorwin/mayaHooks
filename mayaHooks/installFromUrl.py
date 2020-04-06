@@ -20,6 +20,11 @@ def run(url):
 
     Or a url to a zip file.
     '''
+
+    # Make sure we have well formatted url
+    if not url.lower().startswith( ('http://', 'https://')):
+        url = 'http://' + url
+
     data = readUrlZip(url)
 
     #with zipfile.ZipFile(BytesIO(data), 'r') as temp:
