@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from functools import partial
+import os
 
 from maya.cmds import about, button, columnLayout, confirmDialog, deleteUI, evalDeferred, fileDialog2, \
     setParent, shelfButton, shelfLayout, showWindow, tabLayout, text, textField, textFieldButtonGrp, window
@@ -35,17 +36,24 @@ class Gui(object):
         
         button(l='Check for Updates', c=self.checkForUpdates, en=False )
         
-        text(l='Drag the shelf icons onto your own shelf.  They will regenerate when you reopent his gui.')
+        text(l='Middle Mouse drag the shelf icons onto your own shelf.  They will regenerate when you reopen this gui.')
         
         settings = installCore.loadSettings()
         
         for ver in ['common', str(about(v=True))]:
+
+            scriptPath = installCore.defaultScriptsPath(mayaVersion=ver)
+
             text(l=ver)
             for name, data in settings.get(ver, {}).items():
                 if name not in ('mayaHooks', 'mayaHooksCore'):
                     button(l='Uninstall ' + name, c=partial(self.uninstall, name, ver) )
                 
                 if data.get( 'shelf_items' ):
+
+                    if 'local_path' in data:
+                        scriptPath = os.path.dirname( data['local_path'] )
+
                     tabLayout()
                     shelfLayout(name + '_shelf', h=100)
                     
@@ -54,10 +62,18 @@ class Gui(object):
                         if 'imageOverlayLabel' not in item:
                             item['imageOverlayLabel'] = item.get('annotation', '')
 
-                        if item.get('image', ''):
+                        image = item.get('image', '')
+                        if not image:
                             #del item['image']
-                            
                             item['image'] = 'pythonFamily.png'
+                        else:
+                            # Maya forgets backslashes, so go forward
+                            iconPath = os.path.normpath( scriptPath + '/' + image ).replace('\\', '/')
+                            if os.path.exists( iconPath ):
+                                item['image'] = iconPath
+                        
+                        if 'label' not in item:
+                            item['label'] = item.get( 'annotation', '' )
 
                         #item['style'] = 'iconOnly'
                             
