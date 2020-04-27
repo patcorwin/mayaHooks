@@ -1,10 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
 from functools import partial
+import json
 import os
+import urllib2
 
 from maya.cmds import about, button, columnLayout, confirmDialog, deleteUI, evalDeferred, fileDialog2, \
-    setParent, shelfButton, shelfLayout, showWindow, tabLayout, text, textField, textFieldButtonGrp, window
+    scrollField, setParent, shelfButton, shelfLayout, showWindow, tabLayout, text, textField, \
+    textFieldButtonGrp, textScrollList, window
 
 import mayaHooksCore
 
@@ -110,3 +113,75 @@ class Gui(object):
     
     def checkForUpdates(self, arg):
         checkForUpdates.checkAll()
+
+
+_cache_ = {}
+
+
+def packages():
+    global _cache_
+
+    if not _cache_:
+        try:
+            url = 'https://raw.githubusercontent.com/patcorwin/mayaHooksRepo/master/repository.json'
+            response = urllib2.urlopen(url)
+        except:
+            return
+
+        try:
+            data = response.read()
+            _cache_ = json.loads( data )
+        except Exception:
+            print( "Error Loading\n" + data )
+
+    return _cache_.get('packages', [])
+
+
+'''def getPackageInfo(name):
+    global _cache_
+
+    readme = _cache_[name].get('readme', None)
+    if not readme:
+'''
+
+
+class PackageBrowser(object):
+    NAME = 'mayaHooks Package Browser'
+
+    def __init__(self):
+        if window(self.NAME, ex=True):
+            deleteUI(self.NAME)
+
+        self.win = window(self.NAME)
+        columnLayout(adj=True)
+        self.packageList = textScrollList(nr=10, sc=self.selectPackage)
+        button(label='Install', c=self.install)
+        self.name = text(label='')
+
+        self.info = scrollField(editable=False)
+
+        self.listPackages()
+        showWindow()
+
+    def install(self, arg):
+        try:
+            name = textScrollList(self.packageList, q=True, si=True)[0]
+        except Exception:
+            return
+
+        installFromUrl.run( packages()[name]['source'] )
+        if window(Gui.NAME, ex=True):
+            Gui()
+        deleteUI(self.NAME)
+
+    def selectPackage(self, *args):
+        name = textScrollList(self.packageList, q=True, si=True)[0]
+
+        text(self.name, e=True, label=name)
+        scrollField(self.info, e=True, text=packages()[name]["source"] )
+
+    def listPackages(self):
+        #settings = installCore.loadSettings()
+        # Need to filter out things already installed
+        for packageName, info in packages().items():
+            textScrollList(self.packageList, e=True, a=packageName)

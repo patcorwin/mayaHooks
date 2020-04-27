@@ -123,7 +123,6 @@ def unregisterMenu(createMenu):
 
 
 def customMenu(objectName):
-    print('I am here')
     for name, func in _menus.items():
         try:
             func(objectName)
