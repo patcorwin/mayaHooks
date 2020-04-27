@@ -24,6 +24,10 @@ def makeMelInstaller():
         'mayaHooks/mayaHooks/installFromZip.py',
         'mayaHooks/mayaHooks/gui.py',
         'mayaHooks/mayaHooks/selfInstaller.py',
+        'mayaHooks/mayaHooks/override/__init__.py',
+        'mayaHooks/mayaHooks/override/baseOverride.py',
+        'mayaHooks/mayaHooks/override/FileMenu.py',
+        'mayaHooks/mayaHooks/override/incrementalSaveScene.py',
         
         'mayaHooksCore/info.json',
         'mayaHooksCore/mayaHooksCore/__init__.py',
