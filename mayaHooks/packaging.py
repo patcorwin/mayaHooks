@@ -186,7 +186,7 @@ def makeMelInstaller():
     if hooksExisted:
         cmds.confirmDialog(m='mayaHooks successfully installed!')
     else:
-        cmds.confirmDialog(m='! IMPORTANT !\n\nMiddle Mouse drag the mayaHooks shelf item to your own to access it again,\nor see the script editor for the python code to open it.')
+        cmds.confirmDialog(m='! IMPORTANT !\\n\\nMiddle Mouse drag the mayaHooks shelf item to your own to access it again,\\nor see the script editor for the python code to open it.')
     
     print( """# Code to open mayaHooks gui
     import mayaHooks
