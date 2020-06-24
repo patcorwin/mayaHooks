@@ -508,7 +508,7 @@ mayaHooks.installCore.userSetupEdit('common', 'mayaHooks startup', 'import mayaH
 if hooksExisted:\n\
     cmds.confirmDialog(m='mayaHooks successfully installed!')\n\
 else:\n\
-    cmds.confirmDialog(m='! IMPORTANT !\n\nMiddle Mouse drag the mayaHooks shelf item to your own to access it again,\nor see the script editor for the python code to open it.')\n\
+    cmds.confirmDialog(m='! IMPORTANT !{0}{0}Middle Mouse drag the mayaHooks shelf item to your own to access it again,{0}or see the script editor for the python code to open it.'.format(os.linesep))\n\
 \n\
 print( \"\"\"# Code to open mayaHooks gui\n\
 import mayaHooks\n\
