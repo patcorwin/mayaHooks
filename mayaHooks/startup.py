@@ -28,7 +28,7 @@ def startup():
     
     # Load dev installs
     for (packageKey, info), mayaVersion in packages():
-        folder = info['source']
+        folder = info.get('source', '') # I think mayaHooks and mayaHooksCore don't have sources, everything else should.
         if os.path.isdir( folder ):
             log.debug( '-- Dev install: {} -- {}'.format(packageKey, folder) )
 

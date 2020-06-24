@@ -181,7 +181,7 @@ def makeMelInstaller():
     )
     
     # Add a user setup entry to support dev installs (and icon folders)
-    mayaHooks.installCore.userSetupEdit('common', 'mayaHooks startup', 'import mayaHooks.startup;import mayaHooks.startup.startup()')
+    mayaHooks.installCore.userSetupEdit('common', 'mayaHooks startup', 'import mayaHooks.startup;mayaHooks.startup.startup()')
     
     if hooksExisted:
         cmds.confirmDialog(m='mayaHooks successfully installed!')
