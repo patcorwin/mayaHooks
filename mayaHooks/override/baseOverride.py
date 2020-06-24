@@ -112,6 +112,9 @@ def getOverrideFolder():
 def clearAllOverrides():
     ''' Deletes all the overridden mel files.  Needed on updating mayaHooks so old overrides don't linger.'''
     folder = os.path.dirname( getOverrideFolder() )
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    
     for f in os.listdir(folder):
         if os.path.isdir(folder + '/' + f):
             shutil.rmtree(folder + '/' + f)
