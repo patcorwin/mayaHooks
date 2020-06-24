@@ -1,6 +1,8 @@
 from __future__ import absolute_import, print_function
 
 import os
+import sys
+import traceback
 
 from maya.cmds import about, setParent
 
@@ -38,3 +40,16 @@ def menuWrapper(callable):
 def nicePath(path):
     ''' Returns a consistent path string for correct comparisons. '''
     return os.path.normcase( os.path.normpath(path) )
+    
+    
+def runFile(path):
+    ''' Runs the code in the given file in the __main__ namespace.  Used to dynamically run userSetups for dev installs.
+    '''
+    
+    try:
+        with open(path, 'r') as fid:
+            compiledCode = compile(fid.read(), path, 'exec')
+            exec(compiledCode, vars(sys.modules['__main__']), vars(sys.modules['__main__']))
+
+    except Exception:
+        print(traceback.format_exc())

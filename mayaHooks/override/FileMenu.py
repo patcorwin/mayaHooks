@@ -1,38 +1,39 @@
+'''
+Provides access to when an existin file is about to be saved.
+The most useful thing is probably to tell source control to edit the file.
+
+This can ONLY be run in userSetup since runs at startup.
+
+    import mayaHooks.override.FileMenu
+    import mayaHooks.override.FileMenu.enable()
+
+
+    def editFile( filename ):
+        # Tell souce control to edit the file
+        pass
+
+    import mayaHooks.override.FileMenu.existingSave.register(editFile)
+
+'''
 from __future__ import absolute_import, division, print_function
 
-from .baseOverride import baseOverride, buildCallStr, insertLine, CustomCallbacks
+from .baseOverride import baseOverride, insertLine, CustomCallbacks
+
+
+if 'existingSave' not in globals():
+    existingSave = CustomCallbacks('sceneName')
 
 
 def enable():
-    '''
-    Builds `<TARGET>.<maya version#>.mel` if it doesn't exist.
-    '''
+    global existingSave
 
-    #line = '''\t\tpython("try:mayaHooks.override.FileMenu.existingSave('" + $sceneName + "')\\nexcept Exception as ex:print(ex)");'''
     with baseOverride('FileMenu.mel', source=False) as (filename, overrideFilename):
 
         if filename:
-            line = buildCallStr(2, existingSave, 'sceneName')
             insertLine(
                 filename,
                 overrideFilename,
                 "} else if ((`file -q -mf`) || (`file -q -ex` == 0)) {",
-                [line],
+                [existingSave.callString(indent=2)],
                 lineOffset=1
             )
-
-
-if '_EXISTING_SAVE' not in globals():
-    _EXISTING_SAVE = CustomCallbacks()
-
-
-def existingSave(filename):
-    _EXISTING_SAVE.run(filename)
-
-
-def registerExistingSave(func):
-    _EXISTING_SAVE.register(func)
-    
-    
-def unregisterExistingSave(func):
-    _EXISTING_SAVE.unregister(func)

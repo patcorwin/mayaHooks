@@ -1,7 +1,6 @@
 from io import BytesIO
 import logging
 import urllib2
-import zipfile
 
 from maya import cmds
 
@@ -12,7 +11,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
     
 
-def run(url):
+def run(url, mayaVersionHint=None, silent=False):
     '''
     Takes a github.com url, like:
         
@@ -30,7 +29,7 @@ def run(url):
     #with zipfile.ZipFile(BytesIO(data), 'r') as temp:
     #    info, infopath = installCore.readInfoInZip(temp)
 
-    mayaVersion = installCore.ask( BytesIO(data) )
+    mayaVersion = installCore.ask( BytesIO(data), mayaVersionHint)
     
     if not mayaVersion:
         return
@@ -42,7 +41,8 @@ def run(url):
     installCore.update(settings, packageKey, mayaVersion,
         source=url,
     )
-    cmds.confirmDialog(m='Install complete!')
+    if not silent:
+        cmds.confirmDialog(m='Install complete!')
     
     
 def readUrlZip(url):

@@ -1,3 +1,18 @@
+'''
+
+info.json spec
+
+{
+    "utc_build_time": <generally str(datetime.utcnow() required>,
+    "icon_paths": Optional list of paths with icons, ex
+        [ 'icons', # A  'icons' folder exists underneath the package, ex somePackage/icons
+        ]
+    "shelf_items": Optional list of dicts to become shelf buttons displayed in the mayaHooks gui.
+        Dict are kwargs for shelfButton
+}
+
+'''
+
 from __future__ import absolute_import, division, print_function
 
 #import time

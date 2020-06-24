@@ -285,14 +285,14 @@ def extractZipBasicInfo(zipdata):
 
 
 
-def ask(zipdata):
+def ask(zipdata, mayaVersionHint=None):
     '''
     Prompt the user as needed to overwrite if the package exists or get where to
     install to.
     
     Returns: mayaVersion, either 'common' or something like '2019'
     '''
-    
+    global HERE
     info, packagekey, userSetupCode, packageContainerFolder = extractZipBasicInfo(zipdata)
     
     settings = loadSettings()
@@ -304,10 +304,9 @@ def ask(zipdata):
     if installedBuildTime:
         mayaVersion = 'common'
     else:
-        hereVersion = str(cmds.about(v=True))
-        installedBuildTime = checkInstalledBuiltTime(settings, packagekey, hereVersion)
+        installedBuildTime = checkInstalledBuiltTime(settings, packagekey, HERE)
         if installedBuildTime:
-            mayaVersion = hereVersion
+            mayaVersion = HERE
         else:
             mayaVersion = None
     
@@ -331,6 +330,10 @@ def ask(zipdata):
     # Otherwise ask where to install
     else:
         #'(Advanced) "Custom" lets you choose anywhere by editing userSetup.\n'
+        
+        if mayaVersionHint:
+            assert mayaVersionHint in [ALL_VERSION, HERE], 'mayaVersionHint was {} but does not match {} or {}'.format(mayaVersionHint, ALL_VERSION, HERE)
+            return mayaVersionHint
         
         action = cmds.confirmDialog(m=VERSION_MSG, button=[ALL_VERSION, HERE, 'Cancel'])
         

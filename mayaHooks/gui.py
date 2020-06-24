@@ -3,10 +3,11 @@ from __future__ import absolute_import, division, print_function
 from functools import partial
 import json
 import os
+import traceback
 import urllib2
 
 from maya.cmds import about, button, columnLayout, confirmDialog, deleteUI, evalDeferred, fileDialog2, \
-    scrollField, setParent, shelfButton, shelfLayout, showWindow, tabLayout, text, textField, \
+    rowLayout, scrollField, setParent, shelfButton, shelfLayout, showWindow, tabLayout, text, textField, \
     textFieldButtonGrp, textScrollList, window
 
 import mayaHooksCore
@@ -27,13 +28,21 @@ class Gui(object):
         window(self.NAME)
         columnLayout(adj=True)
         
-        button(l='Install from URL', c=self.urlInstall)
-        self.urlField = textField()
+        if True:
+            rowLayout(nc=3, ct3=['left', 'both', 'right'])
+            text(label='URL')
+            self.urlField = textField(w=300)
+            button(l='Install', c=self.urlInstall)
+            setParent('..')
         
         text(l='')
         
-        button(l='Install from Zip', c=self.zipInstall)
-        self.zipField = textFieldButtonGrp(l='', bl='...', bc=self.fileBrowse)
+        if True:
+            rowLayout(nc=3, ct3=['left', 'both', 'right'])
+            text(label='Zip')
+            self.zipField = textFieldButtonGrp(l='', bl='...', bc=self.fileBrowse, w=300, cw3=[1, 250, 50])
+            button(l='Install', c=self.zipInstall)
+            setParent('..')
         
         text(l='')
         
@@ -42,6 +51,8 @@ class Gui(object):
         text(l='Middle Mouse drag the shelf icons onto your own shelf.  They will regenerate when you reopen this gui.')
         
         settings = installCore.loadSettings()
+        
+        shelfErrors = set()
         
         for ver in ['common', str(about(v=True))]:
 
@@ -81,11 +92,19 @@ class Gui(object):
                         #item['style'] = 'iconOnly'
                             
                         item = {str(k): str(v) for k, v in item.items()}  # Commands can't take unicode (in python 2.7)
-                        shelfButton( **item )
+                        try:
+                            shelfButton( **item )
+                        except:
+                            print( traceback.format_exc() )
+                            shelfErrors.add(name)
+                            
                     setParent('..')
                     setParent('..')
         
         showWindow()
+        
+        if shelfErrors:
+            confirmDialog(m='The following packages and issues loading their shelf items:\n\n' + '\n'.join(shelfErrors))
     
     
     def uninstall(self, name, ver, *args):

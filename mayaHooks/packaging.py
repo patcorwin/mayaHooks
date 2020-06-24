@@ -4,6 +4,7 @@ import base64
 import json
 import os
 import textwrap
+import zipfile
 import zlib
 
 from . import installCore
@@ -20,13 +21,17 @@ def makeMelInstaller():
         'mayaHooks/mayaHooks/checkForUpdates.py',
         'mayaHooks/mayaHooks/dagMenuProc.py',
         'mayaHooks/mayaHooks/installCore.py',
+        'mayaHooks/mayaHooks/installDev.py',
         'mayaHooks/mayaHooks/installFromUrl.py',
         'mayaHooks/mayaHooks/installFromZip.py',
         'mayaHooks/mayaHooks/gui.py',
-        'mayaHooks/mayaHooks/selfInstaller.py',
+        'mayaHooks/mayaHooks/packaging.py',
+        'mayaHooks/mayaHooks/startup.py',
         'mayaHooks/mayaHooks/override/__init__.py',
         'mayaHooks/mayaHooks/override/baseOverride.py',
+        'mayaHooks/mayaHooks/override/dagMenuProc.py',
         'mayaHooks/mayaHooks/override/FileMenu.py',
+        'mayaHooks/mayaHooks/override/gameFbxExporter.py',
         'mayaHooks/mayaHooks/override/incrementalSaveScene.py',
         
         'mayaHooksCore/info.json',
@@ -132,24 +137,30 @@ def makeMelInstaller():
     code.append( textwrap.dedent('''
     def remPackage(packageName):
         # Remove reference to the given `packageName`
+        
+        wasRemoved = False
         import sys
         dotName = packageName + '.'
         for name in list(sys.modules.keys()):
             if name.startswith(dotName):
                 del sys.modules[name]
+                wasRemoved = True
         
         if packageName in sys.modules:
             del sys.modules[packageName]
+            wasRemoved = True
+        
+        return wasRemoved
     
-    remPackage('mayaHooks')
+    hooksExisted = remPackage('mayaHooks')
     remPackage('mayaHooksCore')
         
     import mayaHooks.installCore
-    import mayaHooks.selfInstaller
+    import mayaHooks.packaging
     settings = mayaHooks.installCore.loadSettings()
     mayaHooks.installCore.update(settings, 'mayaHooks', 'common',
         utc_install_time=str(datetime.datetime.utcnow()),
-        utc_build_time=mayaHooks.selfInstaller.getBuildTime(),
+        utc_build_time=mayaHooks.packaging.getBuildTime(),
         shelf_items=[
             {
                 'command': 'import mayaHooks;mayaHooks.main()',
@@ -159,13 +170,28 @@ def makeMelInstaller():
         ]
     )
     
+    # Remove old overrides so they get updated if needed and don't leave cruft behind
+    import mayaHooks.override.baseOverride
+    mayaHooks.override.baseOverride.clearAllOverrides()
+    
     import mayaHooksCore
     mayaHooks.installCore.update(settings, 'mayaHooksCore', 'common',
         utc_install_time=str(datetime.datetime.utcnow()),
         utc_build_time=mayaHooksCore.getBuildTime(),
     )
     
-    cmds.confirmDialog(m='mayaHooks successfully installed!')
+    # Add a user setup entry to support dev installs (and icon folders)
+    mayaHooks.installCore.userSetupEdit('common', 'mayaHooks startup', 'import mayaHooks.startup;import mayaHooks.startup.startup()')
+    
+    if hooksExisted:
+        cmds.confirmDialog(m='mayaHooks successfully installed!')
+    else:
+        cmds.confirmDialog(m='! IMPORTANT !\n\nMiddle Mouse drag the mayaHooks shelf item to your own to access it again,\nor see the script editor for the python code to open it.')
+    
+    print( """# Code to open mayaHooks gui
+    import mayaHooks
+    mayaHooks.main()
+    # End mayaHooks code""")
     
     import inspect
     class FullReload(object):
@@ -237,3 +263,33 @@ def getBuildTime(useDevPath=False):
         info = json.load(fid)
     
     return info.get('utc_build_time', installCore.UTC_BUILD_DEFAULT)
+
+
+def makeZip(package, output=None, keepPyc=False):
+
+    assert os.path.isdir(package), '"{}" is not a folder'.format(package)
+
+    if not output:
+        output = package + '.zip'
+
+    container = os.path.dirname(package)
+    cutPoint = len( container ) + 1
+
+    info = container + '/info.json'
+    userSetup = container + '/userSetup_code.py'
+
+    assert os.path.exists(info), 'info.json must exist adjacent to the package'
+
+    with zipfile.ZipFile( output, 'w', zipfile.ZIP_DEFLATED ) as fid:
+
+        for path, dirs, files in os.walk(package):
+            for f in files:
+                if not f.lower().endswith( '.pyc' ) or keepPyc:
+                    filename = path + '/' + f
+                    arcname = filename[cutPoint:].replace('\\', '/')
+                    fid.write(filename, arcname)
+
+        fid.write( info, 'info.json' )
+
+        if os.path.exists(userSetup):
+            fid.write( userSetup, 'userSetup_code.py' )

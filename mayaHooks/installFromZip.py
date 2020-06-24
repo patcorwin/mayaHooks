@@ -72,7 +72,7 @@ except Exception:
     basestring = str
 
 
-def run(zippath):
+def run(zippath, mayaVersionHint=None, silent=False):
     
     # Strip out quotes if they exist
     if zippath.startswith('"'):
@@ -80,7 +80,7 @@ def run(zippath):
     if zippath.endswith('"'):
         zippath = zippath[:-1]
     
-    mayaVersion = installCore.ask(zippath)
+    mayaVersion = installCore.ask(zippath, mayaVersionHint)
     
     if not mayaVersion:
         return
@@ -93,7 +93,8 @@ def run(zippath):
         source=os.path.normpath(zippath).replace('\\', '/'),
         source_data={'modified_time': os.path.getmtime(zippath)},
     )
-    cmds.confirmDialog(m='Install complete!')
+    if not silent:
+        cmds.confirmDialog(m='Install complete!')
 
 
 
