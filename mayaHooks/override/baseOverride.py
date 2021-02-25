@@ -224,15 +224,29 @@ def insertLines(filename, overrideFilename, edits):
         fid.write( ''.join(lines) )
 
 
+def CustomCallbacks(*args, **kwargs):
+    
+    doc = ''' Pass a function to `.register()` with the following signature:
+    <someFuncion>({})
+    '''.format( ', '.join(args) )
+    
+    params = {'__doc__': doc, 'enable': staticmethod(kwargs['enable'])}
+    return type('CustomCallbacks', (_CustomCallbacks,), params)(*args)
 
-class CustomCallbacks(object):
+
+class _CustomCallbacks(object):
     
     def __init__(self, *args):
         self.args = args
         self.callbacks = OrderedDict()
+        self.activated = False
     
     
     def register(self, callback):
+        if not self.activated:
+            self.enable()
+            self.activated = True
+        
         funcName = util.getCallableAsStr(callback)
     
         self.callbacks[funcName] = callback
@@ -254,7 +268,7 @@ class CustomCallbacks(object):
         return returnVal
 
 
-    def callString(self, indent=0, autoCatch=True):
+    def _callString(self, indent=0, autoCatch=True):
         frame = inspect.currentframe()
         for key, val in frame.f_back.f_globals.items():
             if self == val:

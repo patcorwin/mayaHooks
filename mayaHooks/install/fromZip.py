@@ -36,13 +36,13 @@ import datetime
 import logging
 import os
 import tempfile
-import zipfile
 
 from maya import cmds
 
-
-from . import installCore
 from mayaHooksCore import uninstall
+
+from . import core
+from .. import _startup
 
 
 exampleSetupCode = '''
@@ -73,26 +73,31 @@ except Exception:
 
 
 def run(zippath, mayaVersionHint=None, silent=False):
-    
+    zippath = os.path.expandvars( os.path.expanduser(zippath) )
     # Strip out quotes if they exist
     if zippath.startswith('"'):
         zippath = zippath[1:]
     if zippath.endswith('"'):
         zippath = zippath[:-1]
     
-    mayaVersion = installCore.ask(zippath, mayaVersionHint)
+    mayaVersion = core.ask(zippath, mayaVersionHint)
     
     if not mayaVersion:
         return
     
     packageKey = installZip(zippath, mayaVersion)
     
-    settings = installCore.loadSettings()
+    settings = core.loadSettings()
 
-    installCore.update(settings, packageKey, mayaVersion,
+    core.update(settings, packageKey, mayaVersion,
         source=os.path.normpath(zippath).replace('\\', '/'),
         source_data={'modified_time': os.path.getmtime(zippath)},
+        source_type='zip',
     )
+    
+    packagePath = core.defaultScriptsPath(mayaVersion) + '/' + packageKey
+    _startup.addIconPaths( settings[mayaVersion][packageKey], packagePath)
+    
     if not silent:
         cmds.confirmDialog(m='Install complete!')
 
@@ -105,15 +110,15 @@ def installZip(zipdata, mayaVersion):
     Overwrites any existing install.  Use `run()` to prompt the user.
     '''
     
-    info, packagekey, userSetupCode, packageContainerFolder = installCore.extractZipBasicInfo(zipdata)
+    info, packagekey, userSetupCode, packageContainerFolder = core.extractZipBasicInfo(zipdata)
 
     uninstall(packagekey, mayaVersion)
 
-    settings = installCore.loadSettings()
+    settings = core.loadSettings()
     
     log.debug('PACKAGE KEY {}'.format(packagekey))
 
-    scriptFolder = installCore.defaultScriptsPath(mayaVersion=mayaVersion)
+    scriptFolder = core.defaultScriptsPath(mayaVersion=mayaVersion)
     
     # Finally, extract to the `mayaVersion`
     if isinstance(zipdata, basestring):
@@ -124,12 +129,12 @@ def installZip(zipdata, mayaVersion):
         with open(tempZipPath, 'wb') as fid:
             fid.write(zipdata.read())
     
-    installCore.unzip(tempZipPath, scriptFolder, packagekey, subdir=packageContainerFolder)
+    core.unzip(tempZipPath, scriptFolder, packagekey, subdir=packageContainerFolder)
     
     # Edit usersetup.py as needed.
     if userSetupCode:
         log.debug('Editing userSetup.py')
-        installCore.userSetupEdit(mayaVersion, packagekey, userSetupCode)
+        core.userSetupEdit(mayaVersion, packagekey, userSetupCode)
     else:
         log.debug('No userSetup_code.py exists top level, no edits to userSetup.py.')
 
@@ -139,6 +144,6 @@ def installZip(zipdata, mayaVersion):
     # Add the install time and update the registry with the info
     info['utc_install_time'] = str(datetime.datetime.utcnow())
 
-    installCore.update(settings, packagekey, mayaVersion, **info)
+    core.update(settings, packagekey, mayaVersion, **info)
     
     return packagekey

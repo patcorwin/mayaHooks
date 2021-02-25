@@ -25,6 +25,7 @@ from __future__ import absolute_import, division, print_function
 
 from .gui import Gui as main # noqa
 
+from ._startup import startup # noqa
 
 '''
 if cmds.optionVar(ex='mayaHooks_updateCheckTime'):

@@ -1,16 +1,121 @@
 from __future__ import absolute_import, division, print_function
 
 import base64
+import collections
+import datetime
 import json
 import os
 import textwrap
 import zipfile
 import zlib
 
-from . import installCore
+from .install import core
+
+_mayaHooksfiles = [
+    'mayaHooks/info.json',
+    'mayaHooks/mayaHooks/__init__.py',
+    'mayaHooks/mayaHooks/_util.py',
+    'mayaHooks/mayaHooks/checkForUpdates.py',
+    'mayaHooks/mayaHooks/dagMenuProc.py',
+    'mayaHooks/mayaHooks/icons/mayaHooksGui.png',
+    'mayaHooks/mayaHooks/install/__init__.py',
+    'mayaHooks/mayaHooks/install/core.py',
+    'mayaHooks/mayaHooks/install/dev.py',
+    'mayaHooks/mayaHooks/install/fromUrl.py',
+    'mayaHooks/mayaHooks/install/fromZip.py',
+    'mayaHooks/mayaHooks/gui.py',
+    'mayaHooks/mayaHooks/packaging.py',
+    'mayaHooks/mayaHooks/_startup.py',
+    'mayaHooks/mayaHooks/override/__init__.py',
+    'mayaHooks/mayaHooks/override/baseOverride.py',
+    'mayaHooks/mayaHooks/override/dagMenuProc.py',
+    'mayaHooks/mayaHooks/override/FileMenu.py',
+    'mayaHooks/mayaHooks/override/gameFbxExporter.py',
+    'mayaHooks/mayaHooks/override/incrementalSaveScene.py',
+    
+    'mayaHooksCore/info.json',
+    'mayaHooksCore/mayaHooksCore/__init__.py',
+    'mayaHooksCore/mayaHooksCore/vendor/__init__.py',
+    'mayaHooksCore/mayaHooksCore/vendor/send2trash/LICENSE',
+    'mayaHooksCore/mayaHooksCore/vendor/send2trash/__init__.py',
+    'mayaHooksCore/mayaHooksCore/vendor/send2trash/compat.py',
+    'mayaHooksCore/mayaHooksCore/vendor/send2trash/exceptions.py',
+    'mayaHooksCore/mayaHooksCore/vendor/send2trash/plat_gio.py',
+    'mayaHooksCore/mayaHooksCore/vendor/send2trash/plat_osx.py',
+    'mayaHooksCore/mayaHooksCore/vendor/send2trash/plat_other.py',
+    'mayaHooksCore/mayaHooksCore/vendor/send2trash/plat_win.py',
+]
+
+def makeMelInstaller(outputFolder=None, autoUpdateBuildTime=True):
+    
+    if autoUpdateBuildTime:
+        updateBuildTime()
+    
+    if outputFolder:
+        output = outputFolder + '/mayaHooksInstaller.mel'
+    else:
+        output = os.path.dirname(__file__) + '/../mayaHooksInstaller.mel'
+    
+    header = textwrap.dedent('''
+    /*
+    Simplified installation of mayaHooks, just drag this into maya to start the installation.
 
 
-def makeMelInstaller():
+    All the code for the mayaHooks python module is compressed here with zlib
+    and base64.  I tried to have it all as plain text but escaping multiline code
+    within multiline code that contained multiline code got too complicated.
+    */
+    ''')
+
+    # Make a base64 string of all the files so they can be embedded in the mel
+    allFiles = {}
+    
+    root = os.path.dirname( os.path.dirname( os.path.dirname(__file__) ) )
+    
+    for f in _mayaHooksfiles:
+        if f.lower().endswith('.png'):
+            with open(root + '/' + f, 'rb') as fid:
+                # Remove the extra parent directory
+                f = f.split('/', 1)[-1]
+                allFiles[f] = fid.read().encode('base64')
+        else:
+            with open(root + '/' + f, 'r') as fid:
+                if 'info.json' in f:
+                    # Special munge to put info.json in /<package>-info/
+                    parts = f.split('/')
+                    f = parts[0] + '-info/' + parts[1]
+                else:
+                    # Remove the extra parent directory
+                    f = f.split('/', 1)[-1]
+                
+                allFiles[f] = fid.read()
+    
+    allFilesStr = base64.encodestring(zlib.compress(json.dumps(allFiles), 9)).replace('\n', '\\n\\\n')
+    
+    
+    with open( os.path.dirname(os.path.dirname(__file__)) + '/info.json', 'r' ) as fid:
+        info = str(json.load(fid))
+
+    with open( os.path.dirname(__file__) + '/melwrapped.template.py', 'r' ) as fid:
+        code = fid.read().replace('"', '\\"') # Escape any quotes to not interfere with the wrapping mel quotes
+        allCode = '\\n\\\n'.join( [l if l.strip() else '' for l in code.splitlines()] )
+
+    buildTime = getBuildTime(useDevPath=True)
+
+    allCode = allCode.format(info=info, buildTime=buildTime, compressedFiles=allFilesStr)
+    allCode = 'python("' + allCode + '");'
+
+    with open( output, 'w' ) as fid:
+        fid.write( header + allCode )
+
+
+def makeMelInstaller_old(outputFolder=None):
+    ''' Compile everything into a single mel file, optionally specifying the output folder.
+    '''
+    if outputFolder:
+        output = outputFolder + '/mayaHooksInstaller.mel'
+    else:
+        output = os.path.dirname(__file__) + '/../mayaHooksInstaller.mel'
     
     buildTime = getBuildTime(useDevPath=True)
     
@@ -20,13 +125,15 @@ def makeMelInstaller():
         'mayaHooks/mayaHooks/_util.py',
         'mayaHooks/mayaHooks/checkForUpdates.py',
         'mayaHooks/mayaHooks/dagMenuProc.py',
-        'mayaHooks/mayaHooks/installCore.py',
-        'mayaHooks/mayaHooks/installDev.py',
-        'mayaHooks/mayaHooks/installFromUrl.py',
-        'mayaHooks/mayaHooks/installFromZip.py',
+        'mayaHooks/mayaHooks/icons/mayaHooksGui.png',
+        'mayaHooks/mayaHooks/install/__init__.py',
+        'mayaHooks/mayaHooks/install/core.py',
+        'mayaHooks/mayaHooks/install/dev.py',
+        'mayaHooks/mayaHooks/install/fromUrl.py',
+        'mayaHooks/mayaHooks/install/fromZip.py',
         'mayaHooks/mayaHooks/gui.py',
         'mayaHooks/mayaHooks/packaging.py',
-        'mayaHooks/mayaHooks/startup.py',
+        'mayaHooks/mayaHooks/_startup.py',
         'mayaHooks/mayaHooks/override/__init__.py',
         'mayaHooks/mayaHooks/override/baseOverride.py',
         'mayaHooks/mayaHooks/override/dagMenuProc.py',
@@ -104,16 +211,22 @@ def makeMelInstaller():
     root = os.path.dirname( os.path.dirname( os.path.dirname(__file__) ) )
     
     for f in files:
-        with open(root + '/' + f, 'r') as fid:
-            if 'info.json' in f:
-                # Special munge to put info.json in /<package>-info/
-                parts = f.split('/')
-                f = parts[0] + '-info/' + parts[1]
-            else:
+        if f.lower().endswith('.png'):
+            with open(root + '/' + f, 'rb') as fid:
                 # Remove the extra parent directory
                 f = f.split('/', 1)[-1]
-            
-            allFiles[f] = fid.read()
+                allFiles[f] = fid.read().encode('base64')
+        else:
+            with open(root + '/' + f, 'r') as fid:
+                if 'info.json' in f:
+                    # Special munge to put info.json in /<package>-info/
+                    parts = f.split('/')
+                    f = parts[0] + '-info/' + parts[1]
+                else:
+                    # Remove the extra parent directory
+                    f = f.split('/', 1)[-1]
+                
+                allFiles[f] = fid.read()
     
     code.append( "allFiles = '''" + base64.encodestring(zlib.compress(json.dumps(allFiles), 9)) + "'''")
 
@@ -121,18 +234,27 @@ def makeMelInstaller():
 
     code.append( textwrap.dedent(
         '''
+        import base64
         for name, text in allFiles.items():
+            #print('unpacking ' + name)
             filepath = os.path.join(scriptFolder, name)
             dirname = os.path.dirname(filepath)
 
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
-            
-            with open(filepath, 'w') as fid:
-                fid.write(text)
+                
+            if name.lower().endswith('.png'):
+                rawBytes = base64.b64decode(text)
+                with open(filepath, 'wb') as fid:
+                    fid.write(rawBytes)
+            else:
+                with open(filepath, 'w') as fid:
+                    fid.write(text)
         '''
     ) )
-
+    
+    with open( os.path.dirname(os.path.dirname(__file__)) + '/info.json', 'r' ) as fid:
+        info = json.load(fid)
 
     code.append( textwrap.dedent('''
     def remPackage(packageName):
@@ -155,19 +277,15 @@ def makeMelInstaller():
     hooksExisted = remPackage('mayaHooks')
     remPackage('mayaHooksCore')
         
-    import mayaHooks.installCore
+    import mayaHooks.install.core
     import mayaHooks.packaging
-    settings = mayaHooks.installCore.loadSettings()
-    mayaHooks.installCore.update(settings, 'mayaHooks', 'common',
+    settings = mayaHooks.install.core.loadSettings()
+    
+    info = %s
+    
+    mayaHooks.install.core.update(settings, 'mayaHooks', 'common',
         utc_install_time=str(datetime.datetime.utcnow()),
-        utc_build_time=mayaHooks.packaging.getBuildTime(),
-        shelf_items=[
-            {
-                'command': 'import mayaHooks;mayaHooks.main()',
-                'image': '',
-                'annotation': 'mhg'
-            }
-        ]
+        **info
     )
     
     # Remove old overrides so they get updated if needed and don't leave cruft behind
@@ -175,18 +293,22 @@ def makeMelInstaller():
     mayaHooks.override.baseOverride.clearAllOverrides()
     
     import mayaHooksCore
-    mayaHooks.installCore.update(settings, 'mayaHooksCore', 'common',
+    mayaHooks.install.core.update(settings, 'mayaHooksCore', 'common',
         utc_install_time=str(datetime.datetime.utcnow()),
         utc_build_time=mayaHooksCore.getBuildTime(),
     )
     
     # Add a user setup entry to support dev installs (and icon folders)
-    mayaHooks.installCore.userSetupEdit('common', 'mayaHooks startup', 'import mayaHooks.startup;mayaHooks.startup.startup()')
+    mayaHooks.install.core.userSetupEdit('common', 'mayaHooks startup', 'import mayaHooks;mayaHooks.startup()')
     
     if hooksExisted:
         cmds.confirmDialog(m='mayaHooks successfully installed!')
     else:
+        import mayaHooks._startup
         cmds.confirmDialog(m='! IMPORTANT !{0}{0}Middle Mouse drag the mayaHooks shelf item to your own to access it again,{0}or see the script editor for the python code to open it.'.format(os.linesep))
+    
+    hooksPackagePath = mayaHooks.install.core.defaultScriptsPath('common') + '/mayaHooks'
+    mayaHooks._startup.addIconPaths(info, hooksPackagePath)
     
     print( """# Code to open mayaHooks gui
     import mayaHooks
@@ -229,7 +351,7 @@ def makeMelInstaller():
     mayaHooks.main()
     
     
-    '''))
+    ''' % str(info)) )
     
     #allCode = '\n'.join(code).replace('\n', '\\n\\\n').replace('"', '\\"')
     
@@ -248,10 +370,22 @@ def makeMelInstaller():
         */
         ''')
     
-    with open( os.path.dirname(__file__) + '/../mayaHooksInstaller.mel', 'w' ) as fid:
+    with open( output, 'w' ) as fid:
         fid.write( header + allCode )
     
-        
+
+def updateBuildTime():
+    jsonFile = os.path.dirname(os.path.dirname(__file__)) + '/info.json'
+
+    with open(jsonFile, 'r') as fid:
+        info = json.load(fid, object_pairs_hook=collections.OrderedDict)
+    
+    info['utc_build_time'] = str(datetime.datetime.utcnow())
+    
+    with open(jsonFile, 'w') as fid:
+        json.dump(info, fid, indent=4)
+
+
 def getBuildTime(useDevPath=False):
     
     if useDevPath:
@@ -262,17 +396,40 @@ def getBuildTime(useDevPath=False):
     with open(jsonFile, 'r') as fid:
         info = json.load(fid)
     
-    return info.get('utc_build_time', installCore.UTC_BUILD_DEFAULT)
+    return info.get('utc_build_time', core.UTC_BUILD_DEFAULT)
 
 
-def makeZip(package, output=None, keepPyc=False):
-
+def makeZip(package, output=None, keepPyc=False, autoUpdateBuildTime=True):
+    ''' Given a full path to a python package, identifies adjacent info.json and optional userSetup_code.py to make a zip.
+    
+    info.py is required, *.pyc's are excluded by default.
+    
+    Args:
+        package: Full path to a python package, i.e. a folder with an __init__.py
+        output: Defaults to an adjacent <package>.zip, can be a folder or a full path a *.zip
+        keepPyc: Keep *.pyc files, defaults false
+    '''
+    
+    if autoUpdateBuildTime:
+        updateBuildTime()
+    
+    package = os.path.expandvars( os.path.expanduser(package) )
     assert os.path.isdir(package), '"{}" is not a folder'.format(package)
 
-    if not output:
-        output = package + '.zip'
-
     container = os.path.dirname(package)
+    packageName = os.path.basename(package)
+
+    if not output:
+        #output = package + '.zip'
+        output = container + '/' + packageName + '.zip'
+    else:
+        output = os.path.expandvars( os.path.expanduser(output) )
+
+    if not output.lower().endswith('.zip'):
+        
+        output += '/' + packageName + '.zip'
+
+    
     cutPoint = len( container ) + 1
 
     info = container + '/info.json'
@@ -293,3 +450,58 @@ def makeZip(package, output=None, keepPyc=False):
 
         if os.path.exists(userSetup):
             fid.write( userSetup, 'userSetup_code.py' )
+
+
+def validateInfo(info_or_path):
+    ''' UNTESTED '''
+    if isinstance(info_or_path, str):
+        with open(info_or_path, 'r') as fid:
+            info = json.load(fid.read())
+    else:
+        info = info_or_path
+        
+    assert 'utc_build_time' in info, 'info.json must contain "utc_build_time"'
+    
+    keys = info.keys()
+    
+    schema = {
+        'tests': 'list of strings',
+        'icon_paths': 'list of strings',
+        'shelf_items': 'list of dicts',
+        'utc_build_time': 'string'
+    }
+    
+    datatypeErrors = []
+    
+    def checkType(value, name, datatype):
+        if not isinstance( value, datatype ):
+            datatypeErrors.append( '{} is not a {}'.format(name, datatype) )
+    
+    
+    for name, datatype in schema.items():
+        if name in info:
+            if datatype == 'list of strings':
+                checkType(info[name], name, list)
+                for entry in info[name]:
+                    checkType(entry, '{}|{}'.format(name, entry), str)
+                    
+            elif datatype == 'list of dicts':
+                checkType(info[name], name, list)
+                for entry in info[name]:
+                    checkType(entry,  '{}|{}'.format(name, entry), dict )
+            
+            elif datatype == 'string':
+                checkType(info[name], name, str)
+            
+            keys.remove(name)
+    
+    errors = {}
+    if datatypeErrors:
+        errors['data'] = datatypeErrors
+        
+    if keys:
+        errors['unknown keys'] = keys
+        
+    return errors
+    
+    

@@ -6,7 +6,6 @@ This can be ran in userSetup.py or the script editor.
 An example of a hook (you can run this in the script editor and it will only be active for this session):
 
     import mayaHooks.override.dagMenuProc
-    mayaHooks.override.dagMenuProc.enable()
     
     from pymel.core import Callback, menuItem, setParent
     
@@ -22,7 +21,7 @@ An example of a hook (you can run this in the script editor and it will only be 
             menuItem(l='But I could become a cube if I really wanted to', c=Callback(showMessage, "Mighty Morphin' Targets!"))
             setParent('..', m=True)
             
-    mayaHooks.override.dagMenuProc.customDagMenu(cubeFriend)
+    mayaHooks.override.dagMenuProc.callback_customDagMenu.register(cubeFriend)
 
 '''
 
@@ -31,12 +30,8 @@ from __future__ import absolute_import, division, print_function
 from .baseOverride import baseOverride, insertLine, CustomCallbacks
 
 
-if 'customDagMenu' not in globals():
-    customDagMenu = CustomCallbacks('object')
-
-
 def enable():
-    global customDagMenu
+    global callback_customDagMenu
 
     with baseOverride('dagMenuProc.mel', source=True) as (filename, overrideFilename):
 
@@ -45,6 +40,10 @@ def enable():
                 filename,
                 overrideFilename,
                 '"m_dagMenuProc.kSelect"',
-                [ customDagMenu.callString(indent=3) ],
+                [ callback_customDagMenu._callString(indent=3) ],
                 lineOffset=0
             )
+
+
+if 'callback_customDagMenu' not in globals():
+    callback_customDagMenu = CustomCallbacks('object', enable=enable)

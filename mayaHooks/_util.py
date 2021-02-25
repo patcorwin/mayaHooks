@@ -42,6 +42,11 @@ def nicePath(path):
     return os.path.normcase( os.path.normpath(path) )
     
     
+def concretePath(path):
+    ''' Expands all vars to return an absolute path.  Does NOT verify it exists. '''
+    return os.path.abspath( os.path.expanduser(os.path.expandvars(path)) )
+    
+    
 def runFile(path):
     ''' Runs the code in the given file in the __main__ namespace.  Used to dynamically run userSetups for dev installs.
     '''

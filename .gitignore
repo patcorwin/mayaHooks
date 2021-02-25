@@ -117,3 +117,4 @@ dmypy.json
 .hg/
 
 notes.md
+mayaHooks/generated/*

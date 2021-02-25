@@ -33,6 +33,7 @@ import collections
 import json
 import logging
 import os
+import re
 import shutil
 import tempfile
 import zipfile
@@ -43,8 +44,6 @@ from mayaHooksCore import defaultScriptsPath, loadSettings, writeJson, UTC_BUILD
 
 log = logging.getLogger(__name__)
 #log.setLevel(logging.DEBUG)
-
-loadSettings
 
 
 def findPackageSettings(settings, packageKey, mayaVersion=None):
@@ -104,7 +103,7 @@ def readInfoInZip(zipobj):
 
     for d, f in sorted(depth.items()):
         if len(f) > 1:
-            raise Exception('Too many info.json found at the same folder depth, unable to determine top level package')
+            raise Exception('Too many info.json found, unable to determine top level package')
 
         info = json.loads( zipobj.read(f[0]) )
         return info, f[0]
@@ -249,6 +248,14 @@ def packageIsRegistered(packageKey):
     return (common or versioned)
 
 
+def isTest(name, info):
+    package = os.path.basename( os.path.dirname(name) )
+    res = re.search(r'(?<![a-z])tests?(?![a-z])', package)
+    if res or package in info.get('tests', []):
+        return True
+    
+    return False
+
 
 def extractZipBasicInfo(zipdata):
     with zipfile.ZipFile( zipdata, 'r') as temp:
@@ -258,7 +265,8 @@ def extractZipBasicInfo(zipdata):
         log.debug( 'infoPath:{}  packageContainerFolder:{}'.format(infopath, packageContainerFolder) )
         if not packageContainerFolder:
             #print('no pck')
-            packagekeys = [name.split('/')[0] for name in temp.namelist() if name.endswith('/__init__.py') and name.count('/') == 1]
+            packagekeys = [name.split('/')[0] for name in temp.namelist()
+                if name.endswith('/__init__.py') and name.count('/') == 1 and not isTest(name, info)]
                 
         else:
             
@@ -286,12 +294,14 @@ def extractZipBasicInfo(zipdata):
 
 
 def ask(zipdata, mayaVersionHint=None):
-    '''
+    ''' CURRENTLY IGNORED - Always install to common version, it's just a confusing question.
     Prompt the user as needed to overwrite if the package exists or get where to
     install to.
     
     Returns: mayaVersion, either 'common' or something like '2019'
     '''
+    return ALL_VERSION
+    
     global HERE
     info, packagekey, userSetupCode, packageContainerFolder = extractZipBasicInfo(zipdata)
     
@@ -300,9 +310,9 @@ def ask(zipdata, mayaVersionHint=None):
     newBuildTime = info.get('utc_build_time', UTC_BUILD_DEFAULT)
     
     # Figure out the existing build time and mayaVersion, if there is one.
-    installedBuildTime = checkInstalledBuiltTime(settings, packagekey, 'common')
+    installedBuildTime = checkInstalledBuiltTime(settings, packagekey, ALL_VERSION)
     if installedBuildTime:
-        mayaVersion = 'common'
+        mayaVersion = ALL_VERSION
     else:
         installedBuildTime = checkInstalledBuiltTime(settings, packagekey, HERE)
         if installedBuildTime:
@@ -338,7 +348,7 @@ def ask(zipdata, mayaVersionHint=None):
         action = cmds.confirmDialog(m=VERSION_MSG, button=[ALL_VERSION, HERE, 'Cancel'])
         
         if action == ALL_VERSION:
-            mayaVersion = 'common'
+            mayaVersion = ALL_VERSION
         elif action == HERE:
             mayaVersion = HERE
         else:
@@ -347,7 +357,7 @@ def ask(zipdata, mayaVersionHint=None):
     return mayaVersion
 
 
-ALL_VERSION = 'Common'
+ALL_VERSION = 'common'
 HERE = str(cmds.about(q=True, v=True))
 
 VERSION_MSG = 'Where do you want to install?\n\n' \

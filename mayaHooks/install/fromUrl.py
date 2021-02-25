@@ -4,8 +4,8 @@ import urllib2
 
 from maya import cmds
 
-from . import installCore
-from . import installFromZip
+from . import core
+from . import fromZip
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -27,19 +27,20 @@ def run(url, mayaVersionHint=None, silent=False):
     data = readUrlZip(url)
 
     #with zipfile.ZipFile(BytesIO(data), 'r') as temp:
-    #    info, infopath = installCore.readInfoInZip(temp)
+    #    info, infopath = core.readInfoInZip(temp)
 
-    mayaVersion = installCore.ask( BytesIO(data), mayaVersionHint)
+    mayaVersion = core.ask( BytesIO(data), mayaVersionHint)
     
     if not mayaVersion:
         return
     
-    packageKey = installFromZip.installZip( BytesIO(data), mayaVersion )
+    packageKey = fromZip.installZip( BytesIO(data), mayaVersion )
 
-    settings = installCore.loadSettings()
+    settings = core.loadSettings()
 
-    installCore.update(settings, packageKey, mayaVersion,
+    core.update(settings, packageKey, mayaVersion,
         source=url,
+        source_type='url',
     )
     if not silent:
         cmds.confirmDialog(m='Install complete!')
