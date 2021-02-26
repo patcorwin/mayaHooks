@@ -6,6 +6,8 @@ from maya import cmds
 
 from . import core
 from . import fromZip
+from .. import _startup
+
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -42,6 +44,10 @@ def run(url, mayaVersionHint=None, silent=False):
         source=url,
         source_type='url',
     )
+    
+    packagePath = core.defaultScriptsPath(mayaVersion) + '/' + packageKey
+    _startup.addIconPaths( settings[mayaVersion][packageKey], packagePath)
+    
     if not silent:
         cmds.confirmDialog(m='Install complete!')
     

@@ -264,20 +264,20 @@ def extractZipBasicInfo(zipdata):
         packageContainerFolder = os.path.dirname(infopath)
         log.debug( 'infoPath:{}  packageContainerFolder:{}'.format(infopath, packageContainerFolder) )
         if not packageContainerFolder:
-            #print('no pck')
+            log.debug( 'NO container' )
             packagekeys = [name.split('/')[0] for name in temp.namelist()
-                if name.endswith('/__init__.py') and name.count('/') == 1 and not isTest(name, info)]
-                
-        else:
+                if name.endswith('/__init__.py') and name.count('/') == 1 and not isTest(os.path.dirname(name), info)]
             
+        else:
+            log.debug( 'YES container' )
             slashCount = packageContainerFolder.count('/')
             if slashCount == 0:
                 targetCount = 2
             else:
                 slashCount + 1
-            #print('yes pk', targetCount)
-            packagekeys = [name for name in temp.namelist() if name.endswith('/') and name.count('/') == targetCount]
-            #print('\n'.join(temp.namelist()))
+            
+            packagekeys = [name for name in temp.namelist()
+                if name.endswith('/') and name.count('/') == targetCount and not isTest(name, info)]
         
         assert len(packagekeys) == 1, 'The only folder adjacent to info.json is supposed to be the package, found\n{}'.format(packagekeys)
 

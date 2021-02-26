@@ -133,6 +133,7 @@ class Gui(object):
         
         if res == 'Yes':
             mayaHooksCore.uninstall(name, ver)
+            evalDeferred('mayaHooks.main()')
     
         
     def urlInstall(self, arg):
