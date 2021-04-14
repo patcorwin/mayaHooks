@@ -1,4 +1,9 @@
-from itertools import chain, izip_longest
+from itertools import chain
+
+try: # python 3
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
 
 import json
 import logging
@@ -31,8 +36,8 @@ def startup():
         ]
         '''
         return chain(
-            izip_longest(settings.get('common', {}).items(), [], fillvalue='common'),
-            izip_longest(settings.get(core.HERE, {}).items(), [], fillvalue=core.HERE)
+            zip_longest(settings.get('common', {}).items(), [], fillvalue='common'),
+            zip_longest(settings.get(core.HERE, {}).items(), [], fillvalue=core.HERE)
         )
     
     # Load extra info from packages as needed
@@ -48,11 +53,18 @@ def startup():
             packagePath = core.defaultScriptsPath(mayaVersion) + '/' + packageKey
             addIconPaths(info, packagePath)
 
+
+    scriptFolder = core.defaultScriptsPath(mayaVersion=core.ALL_VERSION)
     # Run dev usersetup at the end since everything else is now loaded
     for (packageKey, info), mayaVersion in packages():
         folder = info.get('source', '')
         if os.path.isdir( folder ):
             runUserSetup(packageKey, folder)
+        else:
+            userSetup = scriptFolder + '/' + packageKey + '/userSetup.txt'
+            if os.path.exists(userSetup):
+                log.debug( '---- user setup: {}'.format(userSetup) )
+                _util.runFile(userSetup)
 
 
 def runUserSetup(packageKey, folder):

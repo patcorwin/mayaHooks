@@ -4,7 +4,11 @@ from io import BytesIO
 from functools import partial
 import json
 import os
-import urllib2
+try: # python 3
+    from urllib import request
+except ImportError:
+    from urllib2 import urlopen as request
+
 import zipfile
 
 from maya import cmds
@@ -37,7 +41,7 @@ class ZipURL(object):
         return source.startswith(('http', 'www.')) and source.lower().endswith('.zip')
 
     def checkForNewer(self, packageSettings):
-        res = urllib2.urlopen( packageSettings['source'] )
+        res = request( packageSettings['source'] )
 
         if res.code != 200:
             cmds.warning('This is not a valid url for a zip file {}'.format(packageSettings['source']) )
@@ -58,7 +62,7 @@ class Github(object):
     def checkForNewer(self, packageSettings):
         
         jsonFile = packageSettings['source'].replace( 'github.com', 'raw.githubusercontent.com') + '/master/info.json'
-        res = urllib2.urlopen( jsonFile )
+        res = request( jsonFile )
         
         if res.code != 200:
             cmds.warning('info.json URL {} is not valid'.format(jsonFile) )

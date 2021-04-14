@@ -1,6 +1,9 @@
 from io import BytesIO
 import logging
-import urllib2
+try: # python 3
+    from urllib import request
+except ImportError:
+    from urllib2 import urlopen as request
 
 from maya import cmds
 
@@ -60,7 +63,7 @@ def readUrlZip(url):
         if not url.endswith('master.zip'):
             url += '/archive/master.zip'
     
-    response = urllib2.urlopen(url)
+    response = request(url)
     log.debug('Respone code: {}'.format(response.code) )
     if response.code != 200:
         raise Exception('Url {} returned code {} instead of 200, aborting'.format(url, response.code))

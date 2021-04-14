@@ -4,7 +4,10 @@ from functools import partial
 import json
 import os
 import traceback
-import urllib2
+try: # python 3
+    from urllib import request
+except ImportError:
+    from urllib2 import urlopen as request
 
 from maya.cmds import button, columnLayout, confirmDialog, deleteUI, evalDeferred, fileDialog2, \
     rowLayout, scrollField, scrollLayout, setParent, shelfButton, shelfLayout, showWindow, tabLayout, text, textField, \
@@ -164,7 +167,7 @@ def packages():
     if not _cache_:
         try:
             url = 'https://raw.githubusercontent.com/patcorwin/mayaHooksRepo/master/repository.json'
-            response = urllib2.urlopen(url)
+            response = request(url)
         except Exception:
             return
 
