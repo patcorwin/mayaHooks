@@ -5,11 +5,19 @@ import collections
 import datetime
 import json
 import os
+import sys
 import textwrap
 import zipfile
 import zlib
 
 from .install import core
+
+
+if sys.version_info.major == 2:
+    PY2 = True
+else:
+    PY2 = False
+
 
 _mayaHooksfiles = [
     'mayaHooks/info.json',
@@ -77,7 +85,8 @@ def makeMelInstaller(outputFolder=None, autoUpdateBuildTime=True):
             with open(root + '/' + f, 'rb') as fid:
                 # Remove the extra parent directory
                 f = f.split('/', 1)[-1]
-                allFiles[f] = fid.read().encode('base64')
+                #allFiles[f] = fid.read().encode('base64')
+                allFiles[f] = base64.b64encode(fid.read()).decode()
         else:
             with open(root + '/' + f, 'r') as fid:
                 if 'info.json' in f:
@@ -90,7 +99,10 @@ def makeMelInstaller(outputFolder=None, autoUpdateBuildTime=True):
                 
                 allFiles[f] = fid.read()
     
-    allFilesStr = base64.encodestring(zlib.compress(json.dumps(allFiles), 9)).replace('\n', '\\n\\\n')
+    if PY2:
+        allFilesStr = base64.encodestring(zlib.compress(json.dumps(allFiles), 9)).replace('\n', '\\n\\\n')
+    else:
+        allFilesStr = base64.encodestring(zlib.compress( bytes(json.dumps(allFiles), 'utf-8'), 9)).replace(b'\n', b'\\n\\\n')
     
     
     with open( os.path.dirname(os.path.dirname(__file__)) + '/info.json', 'r' ) as fid:
