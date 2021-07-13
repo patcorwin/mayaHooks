@@ -10,8 +10,6 @@ import textwrap
 import zipfile
 import zlib
 
-from .install import core
-
 
 if sys.version_info.major == 2:
     PY2 = True
@@ -75,9 +73,34 @@ def makeMelInstaller(outputFolder=None, autoUpdateBuildTime=True):
     */
     ''')
 
-    # Make a base64 string of all the files so they can be embedded in the mel
-    allFiles = {}
+    # Make a base64 string of all the files so they can be embedded
+    allFiles = collectAllFiles()
     
+    allFilesStr = base64.encodestring(zlib.compress( json.dumps(allFiles).encode('utf-8'), 9)).replace(b'\n', b'\\n\\\n')
+
+    if not PY2: # py2 is bytestrings so encoding does nothing, but py3 needs to decode to `str` to be saved properly.
+        allFilesStr = allFilesStr.decode()
+    
+    with open( os.path.dirname(os.path.dirname(__file__)) + '/info.json', 'r' ) as fid:
+        info = str(json.load(fid))
+
+    with open( os.path.dirname(__file__) + '/melwrapped.template.py', 'r' ) as fid:
+        code = fid.read().replace('"', '\\"') # Escape any quotes to not interfere with the wrapping mel quotes
+        allCode = '\\n\\\n'.join( [l if l.strip() else '' for l in code.splitlines()] )
+
+    buildTime = getBuildTime(useDevPath=True)
+
+    allCode = allCode.format(info=info, buildTime=buildTime, compressedFiles=allFilesStr)
+    allCode = 'python("' + allCode + '");'
+
+    with open( output, 'w' ) as fid:
+        fid.write( header + allCode )
+    
+    return output
+
+
+def collectAllFiles():
+    allFiles = collections.OrderedDict()
     root = os.path.dirname( os.path.dirname( os.path.dirname(__file__) ) )
     
     for f in _mayaHooksfiles:
@@ -98,27 +121,7 @@ def makeMelInstaller(outputFolder=None, autoUpdateBuildTime=True):
                     f = f.split('/', 1)[-1]
                 
                 allFiles[f] = fid.read()
-    
-    if PY2:
-        allFilesStr = base64.encodestring(zlib.compress(json.dumps(allFiles), 9)).replace('\n', '\\n\\\n')
-    else:
-        allFilesStr = base64.encodestring(zlib.compress( bytes(json.dumps(allFiles), 'utf-8'), 9)).replace(b'\n', b'\\n\\\n')
-    
-    
-    with open( os.path.dirname(os.path.dirname(__file__)) + '/info.json', 'r' ) as fid:
-        info = str(json.load(fid))
-
-    with open( os.path.dirname(__file__) + '/melwrapped.template.py', 'r' ) as fid:
-        code = fid.read().replace('"', '\\"') # Escape any quotes to not interfere with the wrapping mel quotes
-        allCode = '\\n\\\n'.join( [l if l.strip() else '' for l in code.splitlines()] )
-
-    buildTime = getBuildTime(useDevPath=True)
-
-    allCode = allCode.format(info=info, buildTime=buildTime, compressedFiles=allFilesStr)
-    allCode = 'python("' + allCode + '");'
-
-    with open( output, 'w' ) as fid:
-        fid.write( header + allCode )
+    return allFiles
 
 
 def makeMelInstaller_old(outputFolder=None):
@@ -408,7 +411,7 @@ def getBuildTime(useDevPath=False):
     with open(jsonFile, 'r') as fid:
         info = json.load(fid)
     
-    return info.get('utc_build_time', core.UTC_BUILD_DEFAULT)
+    return info.get('utc_build_time', '2000-00-00 00:00:00.000000') # The Y2k time is core.UTC_BUILD_DEFAULT, but not worth the entanglement
 
 
 def makeZip(package, output=None, keepPyc=False, autoUpdateBuildTime=True):

@@ -191,51 +191,75 @@ def userSetupEdit(locversion, key, newText):
     else:
         path = os.environ['maya_app_dir'] + '/' + locversion + '/scripts/userSetup.py'
     
-    log.debug( 'maya_app_dir:' + os.environ['maya_app_dir'] )
+    log.debug('maya_app_dir:' + os.environ['maya_app_dir'])
     log.debug('locversion ' + locversion)
     log.debug('userSetup.py location: ' + path)
 
     if not os.path.exists(path):
+        userSetupCode = ''
         log.debug('userSetup.py does not exist, creating it')
-        with open(path, 'w') as fid:
-            fid.write('\n')
+    else:
+        with open(path, 'r') as fid:
+            userSetupCode = fid.read()
+    
+    userSetupCode = modifyUserSetup(userSetupCode, key, newText)
+    
+    if userSetupCode is None:
+        cmds.confirmDialog(m='Unable to find the right place to edit userSetup.py\n\nYou will need to manually edit it, see the script editor')
+        print( 'Make sure the `# BEGIN_MAYA_HOOKS...` and `# END_MAYA_HOOKS` blocks match.  Paste in the following code:' )
+        print( newText )
+        raise Exception('Unable to edit userSetup.py')
+    
+    with open(path, 'w') as fid:
+        fid.write( userSetupCode )
+        
 
-    headerText = BEGIN_HOOK + ' ' + key
-    text = headerText + '\n' + newText + '\n' + END_HOOK + '\n'
-
-    with open(path, 'r') as fid:
-        lines = fid.readlines()
+def modifyUserSetup(fullpath_or_text, key, newText):
+    ''' If successful, returns the text for a modified userSetup.py, or None if unable to edit.
+    Args:
+        fullpath: String path to userSetup.py, eg "C:/maya/2019/scripts/userSetup.py"
+        key: The maya hooks key
+        newText: Block of text to insert into the file or `None` to clear the entry, if it exists.
+    '''
+    if os.path.exists(fullpath_or_text):
+        with open(fullpath_or_text, 'r') as fid:
+            lines = fid.readlines()
+    else:
+        lines = fullpath_or_text.splitlines(True)
+    
+    startRE = re.compile( '^' + BEGIN_HOOK + ' ' + key + r'\s*', flags=re.I )
+    endRE = re.compile( '^' + END_HOOK + r'\s*$', flags=re.I )
     
     start = None
     end = None
     
+    if newText is not None:
+        newLines = (BEGIN_HOOK + ' ' + key + '\n' + newText + '\n' + END_HOOK + '\n').splitlines(True)
+    else:
+        newLines = []
+
     for i, line in enumerate(lines):
-        #print(line, 'LLLIINNE', start is not None and line.startswith( END_HOOK ), (start is not None), line.startswith( END_HOOK ))
-        if line.startswith(headerText):
+        if startRE.search(line):
             start = i
-        elif start is not None and line.startswith( END_HOOK ):
+        elif start is not None and endRE.search(line):
             end = i + 1
             break
 
     # A start and end tag were found so replace the code.
     if start is not None and end is not None:
-        lines[start:end] = text.splitlines(True)
+        lines[start:end] = newLines
     
     # No blocks were found so append the code to the end of the file.
     elif start is None and end is None:
-        lines += text.splitlines(True)
+        if newText is not None:
+            lines += ['\n'] + newLines
     
     # A start was found but no end so don't do anything to prevent accidental code deletion.
     else:
-        raise Exception('&&& REAL TEXT')
-        cmds.confirmDialog(m='Unable to find the right place to edit userSetup.py\n\nYou will need to manually edit it, see the script editor')
-        print( 'Make sure the `# BEGIN_MAYA_HOOKS...` and `# END_MAYA_HOOKS` blocks match.  Paste in the following code:' )
-        print( text )
-        return
+        return False
     
-    with open(path, 'w') as fid:
-        fid.write( ''.join(lines) )
-        
+    return ''.join(lines)
+
 
 def packageIsRegistered(packageKey):
     

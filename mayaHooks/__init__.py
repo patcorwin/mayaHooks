@@ -23,9 +23,12 @@ from __future__ import absolute_import, division, print_function
 
 #from maya import cmds
 
-from .gui import Gui as main # noqa
-
-from ._startup import startup # noqa
+try:
+    # When importing outside of maya (to test packaging, just ignore issues)
+    from .gui import Gui as main # noqa
+    from ._startup import startup # noqa
+except ImportError:
+    pass
 
 '''
 if cmds.optionVar(ex='mayaHooks_updateCheckTime'):

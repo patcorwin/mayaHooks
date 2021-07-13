@@ -9,7 +9,7 @@ from maya import cmds
 
 try:
     import mayaHooks
-    exists = True
+    exists = mayaHooks.__file__ # Somehow mayaHooks can end up as namespace only in 3, investigate later.
 except:
     exists = False
 buildTime = '{buildTime}'
@@ -50,7 +50,7 @@ scriptFolder = os.environ['maya_app_dir'] + '/scripts'
 # write files to scriptFolder + '/mayaHooks'
 
 allFiles = '''{compressedFiles}'''
-allFiles = json.loads(zlib.decompress( base64.decodestring(allFiles) ))
+allFiles = json.loads(zlib.decompress( base64.decodestring(allFiles.encode('utf-8')) ))
 
 import base64
 for name, text in allFiles.items():
@@ -129,6 +129,12 @@ mayaHooks.main()
 # End mayaHooks code""")
 
 import inspect
+
+try:
+    reload
+except NameError:
+    from importlib import reload
+
 class FullReload(object):
 
     @staticmethod
