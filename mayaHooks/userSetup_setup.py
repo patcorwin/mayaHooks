@@ -168,6 +168,18 @@ class ManageUserSetup(object):
         Args:
             fullpath: String path to userSetup.py, eg "C:/maya/2019/scripts/userSetup.py"
         '''
+        
+        modified = modifiedUserSetup(fullpath, self.key, self.text)
+        
+        if modified is False:
+            confirmDialog(m='Unable to find the right place to edit userSetup.py\n\nYou will need to manually edit it, see the script editor')
+            print( 'Make sure the `# BEGIN_MAYA_HOOKS...` and `# END_MAYA_HOOKS` blocks match.  Paste in the following code:' )
+            print( self.text )
+            return
+        else:
+            with open(fullpath, 'w') as fid:
+                fid.write( ''.join(lines) )
+        '''
         with open(fullpath, 'r') as fid:
             lines = fid.readlines()
         
@@ -199,6 +211,7 @@ class ManageUserSetup(object):
         
         with open(fullpath, 'w') as fid:
             fid.write( ''.join(lines) )
+        '''
 
     
     def createUserSetup(self, path):
@@ -208,3 +221,53 @@ class ManageUserSetup(object):
         '''
         with open(path + '/userSetup.py', 'w') as fid:
             fid.write( self.text )
+
+
+def modifiedUserSetup(fullpath_or_text, key, newText):
+    ''' If successful, returns the text for a modified userSetup.py
+    Args:
+        fullpath: String path to userSetup.py, eg "C:/maya/2019/scripts/userSetup.py"
+        key: The maya hooks key
+        newTest: Block of text to insert into the file or `None` to clear the entry, if it exists.
+    '''
+    if os.path.exists(fullpath_or_text):
+        with open(fullpath_or_text, 'r') as fid:
+            lines = fid.readlines()
+    else:
+        lines = fullpath_or_text.splitlines(True)
+    
+    startRE = re.compile( '^' + BEGIN_HOOK + ' ' + key + r'\s*', flags=re.I )
+    endRE = re.compile( '^' + END_HOOK + r'\s*$', flags=re.I )
+    
+    start = None
+    end = None
+    
+    if newText is not None:
+        newLines = (BEGIN_HOOK + ' ' + key + '\n' + newText + '\n' + END_HOOK + '\n').splitlines(True)
+    else:
+        newLines = []
+
+    for i, line in enumerate(lines):
+        if startRE.search(line):
+            start = i
+        elif start is not None and endRE.search(line):
+            end = i + 1
+            break
+
+    # A start and end tag were found so replace the code.
+    if start is not None and end is not None:
+        lines[start:end] = newLines
+    
+    # No blocks were found so append the code to the end of the file.
+    elif start is None and end is None:
+        if newText is not None:
+            lines += ['\n'] + newLines
+    
+    # A start was found but no end so don't do anything to prevent accidental code deletion.
+    else:
+        #confirmDialog(m='Unable to find the right place to edit userSetup.py\n\nYou will need to manually edit it, see the script editor')
+        #print( 'Make sure the `# BEGIN_MAYA_HOOKS...` and `# END_MAYA_HOOKS` blocks match.  Paste in the following code:' )
+        #print( self.text )
+        return False
+    
+    return ''.join(lines)
