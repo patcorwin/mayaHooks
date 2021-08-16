@@ -1,6 +1,6 @@
 # mayaHooks
 
-1) Manage installation of python code and 2) easily extend internal maya functionality.
+A) Manage installation of python code and B) easily extend internal maya functionality.
 
 
 1. As of Maya 2019, pip isn't support without a lot of effort.  Additionally
