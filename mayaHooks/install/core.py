@@ -166,7 +166,7 @@ def unzip(zipPath, dest, rootname, subdir=''):
             if not os.path.exists(infoFolder):
                 os.makedirs(infoFolder)
             
-            os.rename(path, os.path.join(infoFolder, f) )
+            shutil.move(path, infoFolder)
             
     for path in deleteQueue:
         os.remove(path)
@@ -234,6 +234,9 @@ def modifyUserSetup(fullpath_or_text, key, newText):
     end = None
     
     if newText is not None:
+        if isinstance(newText, bytes):
+            newText = newText.decode('utf-8')
+        
         newLines = (BEGIN_HOOK + ' ' + key + '\n' + newText + '\n' + END_HOOK + '\n').splitlines(True)
     else:
         newLines = []
@@ -384,6 +387,4 @@ def ask(zipdata, mayaVersionHint=None):
 ALL_VERSION = 'common'
 HERE = str(cmds.about(q=True, v=True))
 
-VERSION_MSG = 'Where do you want to install?\n\n' \
-    '"' + ALL_VERSION + '" will install to the scripts folder for all Maya versions.\n\n' \
-    '"' + HERE + '" will install to this version of Maya.\n\n'
+VERSION_MSG = 'Where do you want to install?\n\n' + '"' + ALL_VERSION + '" will install to the scripts folder for all Maya versions.\n\n' + '"' + HERE + '" will install to this version of Maya.\n\n'

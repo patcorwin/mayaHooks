@@ -9,9 +9,9 @@ try: # python 3
 except ImportError:
     from urllib2 import urlopen as request
 
-from maya.cmds import button, columnLayout, confirmDialog, deleteUI, evalDeferred, fileDialog2, \
-    rowLayout, scrollField, scrollLayout, setParent, shelfButton, shelfLayout, showWindow, tabLayout, text, textField, \
-    textFieldButtonGrp, textScrollList, window, formLayout
+from maya.cmds import ( button, columnLayout, confirmDialog, deleteUI, evalDeferred, fileDialog2,
+    rowLayout, scrollField, scrollLayout, setParent, shelfButton, shelfLayout, showWindow, tabLayout, text, textField,
+    textFieldButtonGrp, textScrollList, window, formLayout )
 
 import mayaHooksCore
 
