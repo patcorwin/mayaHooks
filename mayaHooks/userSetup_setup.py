@@ -50,7 +50,7 @@ def discoverPythonPaths():
     ''' Returns a list of paths, that exist, where maya searches for python code. '''
     sys_path = { nicePath(p): p for p in sys.path if os.path.exists(p) }
     
-    maya_script_path = { nicePath(p): p for p in os.environ['maya_script_path'].split(';') if os.path.exists(p) }
+    maya_script_path = { nicePath(p): p for p in os.environ['MAYA_SCRIPT_PATH'].split(';') if os.path.exists(p) }
     
     shared = set(sys_path).intersection(maya_script_path)
     

@@ -1,5 +1,5 @@
 '''
-Provides access to when an existin file is about to be saved.
+Provides access to when an existing file is about to be saved.
 The most useful thing is probably to tell source control to edit the file.
 
 This can ONLY be run in userSetup since runs at startup.

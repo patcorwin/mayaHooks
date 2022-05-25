@@ -1,12 +1,12 @@
 {
-    "utc_build_time": "2021-09-28 20:23:12.040000", 
+    "utc_build_time": "2022-05-25 22:32:12.272097",
     "icon_paths": [
         "icons"
-    ], 
+    ],
     "shelf_items": [
         {
-            "command": "import mayaHooks;mayaHooks.main()", 
-            "image": "mayaHooksGui.png", 
+            "command": "import mayaHooks;mayaHooks.main()",
+            "image": "mayaHooksGui.png",
             "annotation": "Maya Hooks Gui"
         }
     ]

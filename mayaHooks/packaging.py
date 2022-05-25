@@ -86,7 +86,7 @@ def makeMelInstaller(outputFolder=None, autoUpdateBuildTime=True):
 
     with open( os.path.dirname(__file__) + '/melwrapped.template.py', 'r' ) as fid:
         code = fid.read().replace('"', '\\"') # Escape any quotes to not interfere with the wrapping mel quotes
-        allCode = '\\n\\\n'.join( [l if l.strip() else '' for l in code.splitlines()] )
+        allCode = '\\n\\\n'.join( [line if line.strip() else '' for line in code.splitlines()] )
 
     buildTime = getBuildTime(useDevPath=True)
 
@@ -216,7 +216,7 @@ def makeMelInstaller_old(outputFolder=None):
             if res != 'Update':
                 raise Exception('Canceled install')
         
-    scriptFolder = os.environ['maya_app_dir'] + '/scripts'
+    scriptFolder = os.environ['MAYA_APP_DIR'] + '/scripts'
     
     # write files to scriptFolder + '/mayaHooks'
     '''.format(buildTime))]
@@ -414,14 +414,14 @@ def getBuildTime(useDevPath=False):
     return info.get('utc_build_time', '2000-00-00 00:00:00.000000') # The Y2k time is core.UTC_BUILD_DEFAULT, but not worth the entanglement
 
 
-def makeZip(package, output=None, keepPyc=False, autoUpdateBuildTime=True):
+def makeZip(package, outputFolder=None, keepPyc=False, autoUpdateBuildTime=True):
     ''' Given a full path to a python package, identifies adjacent info.json and optional userSetup_code.py to make a zip.
     
     info.py is required, *.pyc's are excluded by default.
     
     Args:
         package: Full path to a python package, i.e. a folder with an __init__.py
-        output: Defaults to an adjacent <package>.zip, can be a folder or a full path a *.zip
+        outputFolder: Defaults to an adjacent <package>.zip, can be a folder or a full path a *.zip
         keepPyc: Keep *.pyc files, defaults false
     '''
     
@@ -434,15 +434,15 @@ def makeZip(package, output=None, keepPyc=False, autoUpdateBuildTime=True):
     container = os.path.dirname(package)
     packageName = os.path.basename(package)
 
-    if not output:
-        #output = package + '.zip'
-        output = container + '/' + packageName + '.zip'
+    if not outputFolder:
+        #outputFolder = package + '.zip'
+        outputFolder = container + '/' + packageName + '.zip'
     else:
-        output = os.path.expandvars( os.path.expanduser(output) )
+        outputFolder = os.path.expandvars( os.path.expanduser(outputFolder) )
 
-    if not output.lower().endswith('.zip'):
+    if not outputFolder.lower().endswith('.zip'):
         
-        output += '/' + packageName + '.zip'
+        outputFolder += '/' + packageName + '.zip'
 
     
     cutPoint = len( container ) + 1
@@ -452,7 +452,7 @@ def makeZip(package, output=None, keepPyc=False, autoUpdateBuildTime=True):
 
     assert os.path.exists(info), 'info.json must exist adjacent to the package'
 
-    with zipfile.ZipFile( output, 'w', zipfile.ZIP_DEFLATED ) as fid:
+    with zipfile.ZipFile( outputFolder, 'w', zipfile.ZIP_DEFLATED ) as fid:
 
         for path, dirs, files in os.walk(package):
             for f in files:

@@ -187,11 +187,11 @@ def userSetupEdit(locversion, key, newText):
         raise Exception('Custom locations not supported yet')
 
     elif locversion == 'common':
-        path = os.environ['maya_app_dir'] + '/scripts/userSetup.py'
+        path = os.environ['MAYA_APP_DIR'] + '/scripts/userSetup.py'
     else:
-        path = os.environ['maya_app_dir'] + '/' + locversion + '/scripts/userSetup.py'
+        path = os.environ['MAYA_APP_DIR'] + '/' + locversion + '/scripts/userSetup.py'
     
-    log.debug('maya_app_dir:' + os.environ['maya_app_dir'])
+    log.debug('MAYA_APP_DIR:' + os.environ['MAYA_APP_DIR'])
     log.debug('locversion ' + locversion)
     log.debug('userSetup.py location: ' + path)
 

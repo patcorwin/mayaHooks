@@ -52,7 +52,7 @@ scriptFolder = os.environ['maya_app_dir'] + '/scripts'
 allFiles = '''{compressedFiles}'''
 allFiles = json.loads(zlib.decompress( base64.decodestring(allFiles.encode('utf-8')) ))
 
-import base64
+
 for name, text in allFiles.items():
     #print('unpacking ' + name)
     filepath = os.path.join(scriptFolder, name)
@@ -87,11 +87,13 @@ def remPackage(packageName):
     
     return wasRemoved
 
+
 hooksExisted = remPackage('mayaHooks')
 remPackage('mayaHooksCore')
-    
-import mayaHooks.install.core
-import mayaHooks.packaging
+
+
+import mayaHooks.install.core # noqa
+import mayaHooks.packaging # noqa
 settings = mayaHooks.install.core.loadSettings()
 
 info = {info}
@@ -102,10 +104,10 @@ mayaHooks.install.core.update(settings, 'mayaHooks', 'common',
 )
 
 # Remove old overrides so they get updated if needed and don't leave cruft behind
-import mayaHooks.override.baseOverride
+import mayaHooks.override.baseOverride # noqa
 mayaHooks.override.baseOverride.clearAllOverrides()
 
-import mayaHooksCore
+import mayaHooksCore # noqa
 mayaHooks.install.core.update(settings, 'mayaHooksCore', 'common',
     utc_install_time=str(datetime.datetime.utcnow()),
     utc_build_time=mayaHooksCore.getBuildTime(),
@@ -165,6 +167,6 @@ class FullReload(object):
 
 fullReload = FullReload()
 
-import mayaHooks
+import mayaHooks # noqa
 fullReload(mayaHooks)
 mayaHooks.main()

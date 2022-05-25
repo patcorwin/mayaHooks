@@ -93,7 +93,7 @@ def findMelTarget(target):
     '''
     targetLowered = target.lower()
     
-    for path in os.environ['maya_script_path'].split(';'):
+    for path in os.environ['MAYA_SCRIPT_PATH'].split(';'):
         if not os.path.isdir(path):
             continue
         
@@ -160,8 +160,8 @@ def baseOverride(target, source):
     print('Sourced override ' + overrideFilename)
     
     # Prepend so it supercedes the maya version
-    if folder not in os.environ['maya_script_path']:
-        os.environ['maya_script_path'] = folder + ';' + os.environ['maya_script_path']
+    if folder not in os.environ['MAYA_SCRIPT_PATH']:
+        os.environ['MAYA_SCRIPT_PATH'] = folder + ';' + os.environ['MAYA_SCRIPT_PATH']
     mel.rehash()
     
     if source:
