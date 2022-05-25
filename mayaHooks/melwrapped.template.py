@@ -45,13 +45,12 @@ if exists:
         if res != 'Update':
             raise Exception('Canceled install')
     
-scriptFolder = os.environ['maya_app_dir'] + '/scripts'
+scriptFolder = os.environ['MAYA_APP_DIR'] + '/scripts'
 
 # write files to scriptFolder + '/mayaHooks'
 
 allFiles = '''{compressedFiles}'''
 allFiles = json.loads(zlib.decompress( base64.decodestring(allFiles.encode('utf-8')) ))
-
 
 for name, text in allFiles.items():
     #print('unpacking ' + name)
@@ -90,8 +89,7 @@ def remPackage(packageName):
 
 hooksExisted = remPackage('mayaHooks')
 remPackage('mayaHooksCore')
-
-
+    
 import mayaHooks.install.core # noqa
 import mayaHooks.packaging # noqa
 settings = mayaHooks.install.core.loadSettings()
