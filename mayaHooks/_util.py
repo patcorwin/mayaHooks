@@ -6,6 +6,8 @@ import traceback
 
 from maya.cmds import about, setParent
 
+ENV_SEP = ';' if os.name == 'nt' else ':' # Windows separates env var paths with semi-colons, linux/mac with colons
+
 
 def version(includeBitVersion=False):
     ''' Returns the year, and optionally a tuple of (year, bit)

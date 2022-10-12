@@ -111,6 +111,6 @@ def addIconPaths(info, packageFolder):
     paths = info.get('icon_paths', [])
     if paths:
         log.debug( '---- icon paths ' + ' '.join(paths) )
-        os.environ['XBMLANGPATH'] += ';' + ';'.join( [_util.concretePath(packageFolder + '/' + p) for p in paths] )
+        os.environ['XBMLANGPATH'] += _util.ENV_SEP + _util.ENV_SEP.join( [_util.concretePath(packageFolder + '/' + p) for p in paths] )
     else:
         log.debug( '---- no icon paths' )

@@ -31,7 +31,7 @@ import sys
 
 from maya.cmds import about, button, columnLayout, confirmDialog, deleteUI, text, textScrollList, showWindow, window
 
-from ._util import nicePath
+from ._util import nicePath, ENV_SEP
 
 
 BEGIN_HOOK = '# BEGIN_MAYA_HOOKS'
@@ -50,7 +50,7 @@ def discoverPythonPaths():
     ''' Returns a list of paths, that exist, where maya searches for python code. '''
     sys_path = { nicePath(p): p for p in sys.path if os.path.exists(p) }
     
-    maya_script_path = { nicePath(p): p for p in os.environ['MAYA_SCRIPT_PATH'].split(';') if os.path.exists(p) }
+    maya_script_path = { nicePath(p): p for p in os.environ['MAYA_SCRIPT_PATH'].split(ENV_SEP) if os.path.exists(p) }
     
     shared = set(sys_path).intersection(maya_script_path)
     
@@ -84,10 +84,10 @@ class ManageUserSetup(object):
         
         '''
         If I can determine these, I can also have an easy mode for all maya's or just this year
-        ideal c:/maya_app_dir/2019/scripts
-        ideal c:/maya_app_dir/scripts
+        ideal c:/MAYA_APP_DIR/2019/scripts
+        ideal c:/MAYA_APP_DIR/scripts
         
-        c:/maya_app_dir/2019/prefs/scripts
+        c:/MAYA_APP_DIR/2019/prefs/scripts
         '''
         
         

@@ -131,13 +131,18 @@ def unzip(zipPath, dest, rootname, subdir=''):
     packageFolder = dest + '/' + rootname
     infoFolder = packageFolder + '-info'
     
+    log.debug('packageFolder: "{}"'.format(packageFolder))
+    log.debug('infoFolder: "{}"'.format(infoFolder))
+
     if os.path.exists(infoFolder):
+        log.debug('Deleting existing info folder "{}"'.format(infoFolder))
         shutil.rmtree(infoFolder)
     
     if os.path.exists(packageFolder):
+        log.debug('Deleting existing package folder "{}"'.format(packageFolder))
         shutil.rmtree(packageFolder)
     
-    
+
     log.debug('Unzipping {} to {} subdir="{}"'.format(zipPath, dest, subdir) )
     tempDir = tempfile.mkdtemp()
     with zipfile.ZipFile(zipPath, 'r') as fid:
@@ -163,6 +168,7 @@ def unzip(zipPath, dest, rootname, subdir=''):
             #os.rename(path, newDest)
             shutil.copytree(path, newDest)
         else:
+            # Loose files are moved into the info folder
             if not os.path.exists(infoFolder):
                 os.makedirs(infoFolder)
             

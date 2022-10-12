@@ -5,6 +5,11 @@ import datetime
 import os
 import zlib
 
+try:
+    base64_decodebytes = base64.decodebytes
+except AttributeError:
+    base64_decodebytes = base64.decodestring # decodestring is a deprecated alias in 3.1
+
 from maya import cmds
 
 try:
@@ -50,7 +55,7 @@ scriptFolder = os.environ['MAYA_APP_DIR'] + '/scripts'
 # write files to scriptFolder + '/mayaHooks'
 
 allFiles = '''{compressedFiles}'''
-allFiles = json.loads(zlib.decompress( base64.decodestring(allFiles.encode('utf-8')) ))
+allFiles = json.loads(zlib.decompress( base64_decodebytes(allFiles.encode('utf-8')) ))
 
 for name, text in allFiles.items():
     #print('unpacking ' + name)

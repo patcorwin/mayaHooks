@@ -17,6 +17,12 @@ else:
     PY2 = False
 
 
+try:
+    base64_encodebytes = base64.encodebytes
+except AttributeError:
+    base64_encodebytes = base64.encodestring # decodestring is a deprecated alias in 3.1
+
+
 _mayaHooksfiles = [
     'mayaHooks/info.json',
     'mayaHooks/mayaHooks/__init__.py',
@@ -76,7 +82,7 @@ def makeMelInstaller(outputFolder=None, autoUpdateBuildTime=True):
     # Make a base64 string of all the files so they can be embedded
     allFiles = collectAllFiles()
     
-    allFilesStr = base64.encodestring(zlib.compress( json.dumps(allFiles).encode('utf-8'), 9)).replace(b'\n', b'\\n\\\n')
+    allFilesStr = base64_encodebytes(zlib.compress( json.dumps(allFiles).encode('utf-8'), 9)).replace(b'\n', b'\\n\\\n')
 
     if not PY2: # py2 is bytestrings so encoding does nothing, but py3 needs to decode to `str` to be saved properly.
         allFilesStr = allFilesStr.decode()
@@ -243,7 +249,7 @@ def makeMelInstaller_old(outputFolder=None):
                 
                 allFiles[f] = fid.read()
     
-    code.append( "allFiles = '''" + base64.encodestring(zlib.compress(json.dumps(allFiles), 9)) + "'''")
+    code.append( "allFiles = '''" + base64_encodebytes(zlib.compress(json.dumps(allFiles), 9)) + "'''")
 
     code.append( 'allFiles = json.loads(zlib.decompress( base64.decodestring(allFiles) ))' )
 
