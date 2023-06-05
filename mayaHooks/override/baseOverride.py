@@ -19,7 +19,8 @@ import re
 import shutil
 import traceback
 
-from pymel.core import mel, warning
+import maya.api.OpenMaya as OpenMaya
+import maya.cmds
 
 from .. import _util as util
 
@@ -162,11 +163,12 @@ def baseOverride(target, source):
     # Prepend so it supercedes the maya version
     if folder not in os.environ['MAYA_SCRIPT_PATH']:
         os.environ['MAYA_SCRIPT_PATH'] = folder + util.ENV_SEP + os.environ['MAYA_SCRIPT_PATH']
-    mel.rehash()
+    maya.cmds.rehash()
     
     if source:
-        mel.source(overrideFilename)
-        #mel.source(target.split('.')[0] )  # Strip off the extension
+        maya.cmds.source()
+        OpenMaya.MGlobal.executeCommandStringResult('source "{}"'.format(overrideFilename))
+        #maya.cmds.source(target.split('.')[0] )  # Strip off the extension
 
 
 def insertLine(filename, overrideFilename, targetLine, newCode, lineOffset=0):
@@ -263,7 +265,7 @@ class _CustomCallbacks(object):
                 returnVal = func(*args)
             except Exception as ex:
                 print(ex)
-                warning('Error in function {}'.format(name) )
+                maya.cmds.warning('Error in function {}'.format(name) )
                 
         return returnVal
 

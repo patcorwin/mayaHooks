@@ -35,6 +35,8 @@ from __future__ import absolute_import, division, print_function
 import datetime
 import logging
 import os
+import subprocess
+import sys
 import tempfile
 
 from maya import cmds
@@ -102,6 +104,21 @@ def run(zippath, mayaVersionHint=None, silent=False):
         cmds.confirmDialog(m='Install complete!')
 
 
+def installPymel(package):
+    
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    
+    mayapy = os.path.dirname(sys.executable) + '/mayapy.exe'
+    os.path.exists(mayapy)
+    
+    asdf = subprocess.run([mayapy, '-m', 'pip', 'install', package], capture_output=True, startupinfo=startupinfo)
+
+    if asdf.returncode != 1:
+        return False
+        
+    return True
+
 
 def installZip(zipdata, mayaVersion):
     '''
@@ -115,6 +132,21 @@ def installZip(zipdata, mayaVersion):
     uninstall(packagekey, mayaVersion)
 
     settings = core.loadSettings()
+    
+    pymelSuccess = True
+    if 'pip' in settings:
+        for package in settings['pip']:
+            if package == 'pymel':
+                try:
+                    from pymel.core import select  # noqa
+                    
+                except ModuleNotFoundError:
+                    
+                    if cmds.about(p=True).count( '2022' ):
+                        pymelSuccess = installPymel( 'pymel>=1.2.,<1.3.' )
+                    elif cmds.about(p=True).count( '2023' ):
+                        pymelSuccess = installPymel( 'pymel>=1.3.*,<1.4.*' )
+                
     
     log.debug('PACKAGE KEY {}'.format(packagekey))
 
@@ -145,5 +177,9 @@ def installZip(zipdata, mayaVersion):
     info['utc_install_time'] = str(datetime.datetime.utcnow())
 
     core.update(settings, packagekey, mayaVersion, **info)
+    
+    if not pymelSuccess:
+        cmds.warning('Unable to install pymel, which is required.  You will need to manually install pymel for this package to work.')
+        cmds.confirmDialog(m='Unable to install pymel, which is required.\n\nYou will need to manually install pymel for this package to work.')
     
     return packagekey
