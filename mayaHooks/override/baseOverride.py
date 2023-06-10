@@ -166,7 +166,7 @@ def baseOverride(target, source):
     maya.cmds.rehash()
     
     if source:
-        maya.cmds.source()
+        #maya.cmds.source()
         OpenMaya.MGlobal.executeCommandStringResult('source "{}"'.format(overrideFilename))
         #maya.cmds.source(target.split('.')[0] )  # Strip off the extension
 
